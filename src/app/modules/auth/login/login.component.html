@@ -1,0 +1,12 @@
+<form (submit)="login()">
+  <div>
+    <label for="email">Email:</label>
+    <input type="email" id="email" name="email" [(ngModel)]="email" required>
+  </div>
+  <div>
+    <label for="password">Password:</label>
+    <input type="password" id="password" name="password" [(ngModel)]="password" required>
+  </div>
+  <button type="submit">Login</button>
+  <a (click)="forgotPassword()">Forgot password?</a>
+</form>
