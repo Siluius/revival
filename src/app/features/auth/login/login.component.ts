@@ -27,15 +27,71 @@ export class LoginComponent {
   protected readonly loading = signal(false);
   protected readonly error = signal<string | null>(null);
 
+  private clearFirebaseErrors(): void {
+    const emailControl = this.form.get('email');
+    const passwordControl = this.form.get('password');
+
+    for (const control of [emailControl, passwordControl]) {
+      if (!control) continue;
+      const currentErrors = control.errors ?? {};
+      if ('firebase' in currentErrors) {
+        // Remove only the firebase error while preserving other validator errors
+        const { firebase, ...rest } = currentErrors as Record<string, any>;
+        const nextErrors = Object.keys(rest).length ? rest : null;
+        control.setErrors(nextErrors);
+      }
+    }
+  }
+
+  private setFirebaseFieldError(controlName: 'email' | 'password', message: string): void {
+    const control = this.form.get(controlName);
+    if (!control) return;
+    const currentErrors = control.errors ?? {};
+    control.setErrors({ ...currentErrors, firebase: message });
+    control.markAsTouched();
+  }
+
   async onSubmit(): Promise<void> {
     if (this.loading()) return;
     this.error.set(null);
+    this.clearFirebaseErrors();
+    if (this.form.invalid) {
+      this.form.markAllAsTouched();
+      return;
+    }
     this.loading.set(true);
     try {
       const { email, password } = this.form.getRawValue();
       await this.auth.login(email!, password!);
       await this.router.navigateByUrl('/app/dashboard');
     } catch (e: any) {
+      const code: string | undefined = e?.code;
+      switch (code) {
+        case 'auth/invalid-email':
+          this.setFirebaseFieldError('email', 'Enter a valid email');
+          break;
+        case 'auth/user-disabled':
+          this.setFirebaseFieldError('email', 'This account has been disabled');
+          break;
+        case 'auth/user-not-found':
+          this.setFirebaseFieldError('email', 'No account found with this email');
+          break;
+        case 'auth/wrong-password':
+        case 'auth/invalid-credential':
+          this.setFirebaseFieldError('password', 'Incorrect email or password');
+          break;
+        case 'auth/too-many-requests':
+          this.setFirebaseFieldError('password', 'Too many attempts. Try again later');
+          break;
+        case 'auth/network-request-failed':
+          this.setFirebaseFieldError('email', 'Network error. Check your connection');
+          break;
+        default:
+          // Fallback: attach to password so it appears in the form
+          this.setFirebaseFieldError('password', e?.message ?? 'Login failed');
+          break;
+      }
+      this.form.markAllAsTouched();
       this.error.set(e?.message ?? 'Login failed');
     } finally {
       this.loading.set(false);
