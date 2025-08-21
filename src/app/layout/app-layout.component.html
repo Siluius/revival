@@ -1,0 +1,22 @@
+<div class="layout">
+  <aside class="sidenav">
+    <mat-nav-list>
+      <a mat-list-item routerLink="/app/dashboard">Dashboard</a>
+      <a mat-list-item routerLink="/app/preferences">Preferences</a>
+    </mat-nav-list>
+  </aside>
+  <mat-toolbar color="primary" class="topbar">
+    <span>Revival</span>
+    <span class="spacer"></span>
+    <mat-button-toggle-group [value]="theme()" (change)="setTheme($event.value)">
+      <mat-button-toggle value="theme-light">Light</mat-button-toggle>
+      <mat-button-toggle value="theme-dark">Dark</mat-button-toggle>
+    </mat-button-toggle-group>
+    <button mat-button (click)="logout()">Logout</button>
+  </mat-toolbar>
+  <main class="content">
+    <router-outlet />
+  </main>
+</div>
+
+

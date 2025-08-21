@@ -1,0 +1,6 @@
+.auth-wrapper { display: grid; place-items: center; height: calc(100vh - 64px); }
+.auth-card { width: 360px; }
+.form { display: flex; flex-direction: column; gap: 1rem; }
+.error { color: #c62828; }
+
+

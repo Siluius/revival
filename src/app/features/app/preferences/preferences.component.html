@@ -1,0 +1,14 @@
+<h2>Preferences</h2>
+<form [formGroup]="form" (ngSubmit)="save()" *ngIf="profile()">
+  <mat-form-field appearance="outline">
+    <mat-label>Theme</mat-label>
+    <mat-select formControlName="theme">
+      <mat-option value="light">Light</mat-option>
+      <mat-option value="dark">Dark</mat-option>
+    </mat-select>
+  </mat-form-field>
+  <button mat-raised-button color="primary" type="submit" [disabled]="saving()">Save</button>
+  
+</form>
+
+

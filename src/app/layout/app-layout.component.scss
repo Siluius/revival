@@ -1,0 +1,9 @@
+.layout { display: grid; grid-template-columns: 220px 1fr; grid-template-rows: 56px 1fr; height: 100vh; }
+.sidenav { grid-row: 1 / span 2; grid-column: 1; padding: 0; border-right: 1px solid #e0e0e0; }
+.topbar { grid-row: 1; grid-column: 2; }
+.spacer { flex: 1; }
+.content { grid-row: 2; grid-column: 2; padding: 1rem; overflow: auto; }
+a { text-decoration: none; color: #333; }
+a.active { font-weight: 600; }
+
+
