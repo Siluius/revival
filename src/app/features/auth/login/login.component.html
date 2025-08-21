@@ -1,19 +1,26 @@
 <div class="auth-wrapper">
   <mat-card appearance="outlined" class="auth-card">
-    <h2>Login</h2>
-    <form [formGroup]="form" (ngSubmit)="onSubmit()" class="form">
-      <mat-form-field appearance="outline">
-        <mat-label>Email</mat-label>
-        <input matInput type="email" formControlName="email" />
-      </mat-form-field>
-      <mat-form-field appearance="outline">
-        <mat-label>Password</mat-label>
-        <input matInput type="password" formControlName="password" />
-      </mat-form-field>
-      <button mat-raised-button color="primary" type="submit" [disabled]="loading() || form.invalid">Login</button>
-      <p class="error" *ngIf="error()">{{ error() }}</p>
-    </form>
-    <p>Don't have an account? <a routerLink="/register">Register</a></p>
+    <mat-card-header>
+      <mat-card-title>Login</mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+      <form [formGroup]="form" (ngSubmit)="onSubmit()" class="form">
+        <mat-form-field appearance="outline">
+          <mat-label>Email</mat-label>
+          <input matInput type="email" formControlName="email" />
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Password</mat-label>
+          <input matInput type="password" formControlName="password" />
+        </mat-form-field>
+        <p class="error" *ngIf="error()">{{ error() }}</p>
+        <mat-card-actions>
+          <button mat-raised-button color="primary" type="submit" [disabled]="loading() || form.invalid">Login</button>
+          <span class="spacer"></span>
+          <a routerLink="/register">Register</a>
+        </mat-card-actions>
+      </form>
+    </mat-card-content>
   </mat-card>
 </div>
 

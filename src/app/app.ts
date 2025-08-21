@@ -5,7 +5,7 @@ import { ThemeService } from './shared/theme/theme.service';
 @Component({
   selector: 'app-root',
   imports: [RouterOutlet],
-  templateUrl: './app.html',
+  template: '<router-outlet />',
   styleUrl: './app.scss'
 })
 export class App {
