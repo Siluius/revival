@@ -27,7 +27,7 @@ $dark-theme: mat.m2-define-dark-theme((
 @include mat.core();
 
 /* App-wide baseline, then theme classes */
-::root {
+:root {
   --content-max-width: 1200px;
   --content-padding: 24px;
   --toolbar-gap: 12px;
