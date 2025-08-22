@@ -14,6 +14,14 @@ export const appFeatureRoutes: Routes = [
       {
         path: 'preferences',
         loadComponent: () => import('./preferences/preferences.component').then(m => m.PreferencesComponent)
+      },
+      {
+        path: 'organizations',
+        loadComponent: () => import('./organizations/organizations.component').then(m => m.OrganizationsComponent)
+      },
+      {
+        path: 'attendants',
+        loadComponent: () => import('./attendants/attendants.component').then(m => m.AttendantsComponent)
       }
     ]
   }

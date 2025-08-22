@@ -1,0 +1,62 @@
+<h2 mat-dialog-title>{{ data ? 'Edit Attendant' : 'Add Attendant' }}</h2>
+<div mat-dialog-content>
+  <form [formGroup]="form">
+    <div class="row">
+      <mat-form-field appearance="outline" class="w-50">
+        <mat-label>First Name</mat-label>
+        <input matInput formControlName="firstName" required />
+        <mat-error *ngIf="form.get('firstName')?.invalid">First name is required</mat-error>
+      </mat-form-field>
+      <mat-form-field appearance="outline" class="w-50">
+        <mat-label>Last Name</mat-label>
+        <input matInput formControlName="lastName" required />
+        <mat-error *ngIf="form.get('lastName')?.invalid">Last name is required</mat-error>
+      </mat-form-field>
+    </div>
+
+    <mat-form-field appearance="outline" class="w-100">
+      <mat-label>Address</mat-label>
+      <input matInput formControlName="address" />
+    </mat-form-field>
+
+    <div class="row">
+      <mat-form-field appearance="outline" class="w-50">
+        <mat-label>Date of Birth</mat-label>
+        <input matInput [matDatepicker]="picker" formControlName="dateOfBirth" />
+        <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
+        <mat-datepicker #picker></mat-datepicker>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="w-50">
+        <mat-label>Gender</mat-label>
+        <mat-select formControlName="gender">
+          <mat-option [value]="null">-</mat-option>
+          <mat-option value="male">Male</mat-option>
+          <mat-option value="female">Female</mat-option>
+          <mat-option value="other">Other</mat-option>
+          <mat-option value="prefer_not_to_say">Prefer not to say</mat-option>
+        </mat-select>
+      </mat-form-field>
+    </div>
+
+    <div class="row align-center">
+      <mat-form-field appearance="outline" class="w-75">
+        <mat-label>Organization</mat-label>
+        <mat-select formControlName="organizationId">
+          <mat-option [value]="null">-</mat-option>
+          <mat-option *ngFor="let o of organizations()" [value]="o.id">{{ o.name }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+      <div class="w-25 text-right">
+        <button mat-stroked-button type="button" (click)="addOrganization()">
+          <mat-icon>add</mat-icon>
+          New Organization
+        </button>
+      </div>
+    </div>
+  </form>
+</div>
+<div mat-dialog-actions align="end">
+  <button mat-button mat-dialog-close>Cancel</button>
+  <button mat-flat-button color="primary" (click)="save()" [disabled]="form.invalid">Save</button>
+</div>
