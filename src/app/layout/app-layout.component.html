@@ -1,12 +1,30 @@
 <div class="layout" [class.collapsed]="collapsed()">
   <aside class="sidenav">
     <mat-nav-list>
-      <a mat-list-item routerLink="/app/dashboard">Dashboard</a>
-      <a mat-list-item routerLink="/app/preferences">Preferences</a>
-      <a mat-list-item routerLink="/app/organizations">Organizations</a>
-      <a mat-list-item routerLink="/app/events">Events</a>
-      <a mat-list-item routerLink="/app/attendants">Attendants</a>
-      <a mat-list-item routerLink="/app/activities">Activities</a>
+      <a mat-list-item routerLink="/app/dashboard">
+        <mat-icon>dashboard</mat-icon>
+        <span class="label">Dashboard</span>
+      </a>
+      <a mat-list-item routerLink="/app/preferences">
+        <mat-icon>settings</mat-icon>
+        <span class="label">Preferences</span>
+      </a>
+      <a mat-list-item routerLink="/app/organizations">
+        <mat-icon>business</mat-icon>
+        <span class="label">Organizations</span>
+      </a>
+      <a mat-list-item routerLink="/app/events">
+        <mat-icon>event</mat-icon>
+        <span class="label">Events</span>
+      </a>
+      <a mat-list-item routerLink="/app/attendants">
+        <mat-icon>groups</mat-icon>
+        <span class="label">Attendants</span>
+      </a>
+      <a mat-list-item routerLink="/app/activities">
+        <mat-icon>history</mat-icon>
+        <span class="label">Activities</span>
+      </a>
     </mat-nav-list>
   </aside>
   <mat-toolbar color="primary" class="topbar">
