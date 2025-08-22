@@ -25,6 +25,7 @@ export class AuthService {
       uid: cred.user.uid,
       email: cred.user.email,
       displayName: cred.user.displayName ?? displayName ?? null,
+      role: 'viewer',
       preferences: {}
     };
     await setDoc(doc(this.firestore, `users/${cred.user.uid}`), profile);

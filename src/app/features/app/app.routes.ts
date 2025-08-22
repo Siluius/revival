@@ -18,18 +18,23 @@ export const appFeatureRoutes: Routes = [
       {
         path: 'events',
         loadComponent: () => import('./events/events.component').then(m => m.EventsComponent)
+        // Example for editor-only routes when adding create/edit pages:
+        // canActivate: [editorGuard]
       },
       {
         path: 'organizations',
         loadComponent: () => import('./organizations/organizations.component').then(m => m.OrganizationsComponent)
+        // canActivate: [editorGuard]
       },
       {
         path: 'attendants',
         loadComponent: () => import('./attendants/attendants.component').then(m => m.AttendantsComponent)
+        // canActivate: [editorGuard]
       },
       {
         path: 'attendants/:attendantId/payments',
         loadComponent: () => import('./attendants/attendants-payments.component').then(m => m.AttendantsPaymentsComponent)
+        // canActivate: [editorGuard]
       },
       {
         path: 'activities',

@@ -29,6 +29,7 @@ export class PreferencesComponent {
         uid: user.uid,
         email: user.email,
         displayName: user.displayName,
+        role: 'viewer',
         preferences: { theme: 'light' }
       };
       this.profile.set(initial);
