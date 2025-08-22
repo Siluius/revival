@@ -6,7 +6,7 @@
 
   <mat-form-field appearance="outline">
     <mat-label>Payment Status</mat-label>
-    <mat-select [value]="paymentStatus()" (selectionChange)="paymentStatus.set($event.value)">
+    <mat-select [value]="paymentStatus" (selectionChange)="paymentStatus.set($event.value)">
       <mat-option value="all">All</mat-option>
       <mat-option value="unpaid">Unpaid</mat-option>
       <mat-option value="partial">Partial</mat-option>
@@ -61,7 +61,6 @@
   <ng-container matColumnDef="payments">
     <th mat-header-cell *matHeaderCellDef>Total Payments (USD)</th>
     <td mat-cell *matCellDef="let row">
-      <!-- Placeholder: totals are stored per event; this shows overall counter if available on row -->
       {{ row.totalPaymentsUSD || 0 | number: '1.2-2' }}
     </td>
   </ng-container>
