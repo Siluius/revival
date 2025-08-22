@@ -12,11 +12,12 @@ import { Organization } from '../../../shared/organizations/organizations.interf
 import { OrganizationFormDialogComponent } from './organization-form-dialog.component';
 import { MatSort, MatSortModule, Sort } from '@angular/material/sort';
 import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
+import { IfCanEditDirective } from '../../../shared/auth/if-can-edit.directive';
 
 @Component({
   selector: 'app-organizations',
   standalone: true,
-  imports: [CommonModule, MatTableModule, MatFormFieldModule, MatInputModule, MatButtonModule, MatIconModule, MatDialogModule, MatSortModule, MatPaginatorModule],
+  imports: [CommonModule, MatTableModule, MatFormFieldModule, MatInputModule, MatButtonModule, MatIconModule, MatDialogModule, MatSortModule, MatPaginatorModule, IfCanEditDirective],
   templateUrl: './organizations.component.html'
 })
 export class OrganizationsComponent {

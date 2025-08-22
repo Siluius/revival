@@ -4,10 +4,12 @@
     <input matInput placeholder="Search organizations" [value]="search()" (input)="search.set($any($event.target).value)" />
   </mat-form-field>
   <span class="spacer"></span>
-  <button mat-flat-button color="primary" (click)="add()">
-    <mat-icon>add</mat-icon>
-    Add Organization
-  </button>
+  <ng-container *appIfCanEdit>
+    <button mat-flat-button color="primary" (click)="add()">
+      <mat-icon>add</mat-icon>
+      Add Organization
+    </button>
+  </ng-container>
 </div>
 
 <div class="table-container">
@@ -25,10 +27,12 @@
   <ng-container matColumnDef="actions">
     <th mat-header-cell *matHeaderCellDef>Actions</th>
     <td mat-cell *matCellDef="let row">
-      <button mat-button (click)="edit(row)">
-        <mat-icon>edit</mat-icon>
-        Edit
-      </button>
+      <ng-container *appIfCanEdit>
+        <button mat-button (click)="edit(row)">
+          <mat-icon>edit</mat-icon>
+          Edit
+        </button>
+      </ng-container>
     </td>
   </ng-container>
 
