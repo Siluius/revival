@@ -50,10 +50,10 @@ export class AttendantsComponent {
     return this.allAttendants().filter(a => {
       const matchesTerm = !term || `${a.firstName} ${a.lastName}`.toLowerCase().includes(term) || (a.address ?? '').toLowerCase().includes(term);
       const matchesGender = gender === 'all' || a.gender === gender;
-      const matchesPayment = payment === 'all' || a.paymentStatus === payment;
       const matchesOrg = orgId === 'all' || a.organizationId === orgId;
-      const matchesEvent = evtId === 'all' || true; // placeholder if we later derive payments per event filter
-      return matchesTerm && matchesGender && matchesPayment && matchesOrg && matchesEvent;
+      const effectiveStatus: PaymentStatus | null = evtId === 'all' ? (a.paymentStatus ?? null) : (a.eventPayments?.[evtId]?.status ?? null);
+      const matchesPayment = payment === 'all' || effectiveStatus === payment;
+      return matchesTerm && matchesGender && matchesPayment && matchesOrg;
     });
   });
 

@@ -11,6 +11,7 @@
       <mat-option value="unpaid">Unpaid</mat-option>
       <mat-option value="partial">Partial</mat-option>
       <mat-option value="paid">Paid</mat-option>
+      <mat-option value="cancelled">Cancelled</mat-option>
     </mat-select>
   </mat-form-field>
 
@@ -59,9 +60,15 @@
   </ng-container>
 
   <ng-container matColumnDef="payments">
-    <th mat-header-cell *matHeaderCellDef>Total Payments (USD)</th>
+    <th mat-header-cell *matHeaderCellDef>Event Payments (USD)</th>
     <td mat-cell *matCellDef="let row">
-      {{ row.totalPaymentsUSD || 0 | number: '1.2-2' }}
+      <ng-container *ngIf="eventId() !== 'all'; else overall">
+        {{ row.eventPayments?.[eventId()]?.totalUSD || 0 | number: '1.2-2' }}
+        <small>({{ row.eventPayments?.[eventId()]?.status || '-' }})</small>
+      </ng-container>
+      <ng-template #overall>
+        {{ row.totalPaymentsUSD || 0 | number: '1.2-2' }}
+      </ng-template>
     </td>
   </ng-container>
 
