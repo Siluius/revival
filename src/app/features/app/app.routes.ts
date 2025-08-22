@@ -14,9 +14,12 @@ export const appFeatureRoutes: Routes = [
       {
         path: 'preferences',
         loadComponent: () => import('./preferences/preferences.component').then(m => m.PreferencesComponent)
+      },
+      {
+        path: 'events',
+        loadComponent: () => import('./events/events.component').then(m => m.EventsComponent)
       }
     ]
   }
 ];
-
 
