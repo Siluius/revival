@@ -26,6 +26,10 @@ export const appFeatureRoutes: Routes = [
       {
         path: 'attendants/:attendantId/payments',
         loadComponent: () => import('./attendants/attendants-payments.component').then(m => m.AttendantsPaymentsComponent)
+      },
+      {
+        path: 'activities',
+        loadComponent: () => import('./activities/activities.component').then(m => m.ActivitiesComponent)
       }
     ]
   }

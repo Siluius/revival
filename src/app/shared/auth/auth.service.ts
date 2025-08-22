@@ -4,12 +4,14 @@ import { Firestore, doc, docData, setDoc } from '@angular/fire/firestore';
 import { Router } from '@angular/router';
 import { firstValueFrom, map } from 'rxjs';
 import { AppUserProfile } from './auth.interfaces';
+import { ActivitiesService } from '../activities/activities.service';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private readonly auth = inject(Auth);
   private readonly firestore = inject(Firestore);
   private readonly router = inject(Router);
+  private readonly activities = inject(ActivitiesService);
 
   readonly authState$ = authState(this.auth);
   readonly isAuthenticated$ = this.authState$.pipe(map(user => !!user));
@@ -26,16 +28,22 @@ export class AuthService {
       preferences: {}
     };
     await setDoc(doc(this.firestore, `users/${cred.user.uid}`), profile);
+    await this.activities.logAuth('login', { uid: cred.user.uid, email: cred.user.email, displayName: cred.user.displayName ?? null });
     return cred.user;
   }
 
   async login(email: string, password: string): Promise<User> {
     const cred = await signInWithEmailAndPassword(this.auth, email, password);
+    await this.activities.logAuth('login', { uid: cred.user.uid, email: cred.user.email, displayName: cred.user.displayName ?? null });
     return cred.user;
   }
 
   async logout(): Promise<void> {
+    const user = await this.getCurrentUser();
     await signOut(this.auth);
+    if (user) {
+      await this.activities.logAuth('logout', { uid: user.uid, email: user.email, displayName: user.displayName ?? null });
+    }
     await this.router.navigateByUrl('/login');
   }
 

@@ -2,6 +2,8 @@ import { Injectable, inject } from '@angular/core';
 import { Firestore, addDoc, collection, collectionData, deleteDoc, doc, docData, orderBy, query, serverTimestamp, updateDoc, where, writeBatch, increment } from '@angular/fire/firestore';
 import { Observable, map } from 'rxjs';
 import { NewPayment, Payment } from './payments.interfaces';
+import { ActivitiesService } from '../activities/activities.service';
+import { Auth } from '@angular/fire/auth';
 
 const NIO_TO_USD = 1 / 37; // 37 NIO = 1 USD
 
@@ -9,6 +11,8 @@ const NIO_TO_USD = 1 / 37; // 37 NIO = 1 USD
 export class PaymentsService {
   private readonly firestore = inject(Firestore);
   private readonly collectionRef = collection(this.firestore, 'payments');
+  private readonly activities = inject(ActivitiesService);
+  private readonly auth = inject(Auth);
 
   private toUSD(currency: 'USD' | 'NIO', amount: number): { amountUSD: number; originalAmount?: number; originalCurrency?: 'USD' | 'NIO' } {
     if (currency === 'USD') return { amountUSD: amount, originalAmount: amount, originalCurrency: 'USD' };
@@ -42,6 +46,8 @@ export class PaymentsService {
       updatedAt: serverTimestamp()
     });
     await this.updateCounters(data.attendantId, data.eventId, amountUSD);
+    const user = this.auth.currentUser;
+    await this.activities.logEntity('payments', 'create', 'payments', result.id, { uid: user?.uid ?? null, email: user?.email ?? null, displayName: user?.displayName ?? null }, { data, amountUSD });
     return result.id;
   }
 
@@ -59,6 +65,8 @@ export class PaymentsService {
     const counterRef = doc(this.firestore, `attendantEventPayments/${current.attendantId}_${current.eventId}`);
     batch.set(counterRef, { attendantId: current.attendantId, eventId: current.eventId, totalUSD: increment(delta) }, { merge: true });
     await batch.commit();
+    const user = this.auth.currentUser;
+    await this.activities.logEntity('payments', 'update', 'payments', id, { uid: user?.uid ?? null, email: user?.email ?? null, displayName: user?.displayName ?? null }, { previous: current, updated: { amountUSD, originalAmount, originalCurrency } });
   }
 
   async delete(id: string): Promise<void> {
@@ -66,6 +74,8 @@ export class PaymentsService {
     if (!current) return;
     await deleteDoc(doc(this.firestore, `payments/${id}`));
     await this.updateCounters(current.attendantId, current.eventId, -current.amountUSD);
+    const user = this.auth.currentUser;
+    await this.activities.logEntity('payments', 'delete', 'payments', id, { uid: user?.uid ?? null, email: user?.email ?? null, displayName: user?.displayName ?? null }, { previous: current });
   }
 
   private async getByIdOnce(id: string): Promise<Payment | null> {
