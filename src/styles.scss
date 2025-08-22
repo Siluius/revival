@@ -27,8 +27,10 @@ $dark-theme: mat.m2-define-dark-theme((
 @include mat.core();
 
 /* App-wide baseline, then theme classes */
-:root {
+::root {
   --content-max-width: 1200px;
+  --content-padding: 24px;
+  --toolbar-gap: 12px;
 }
 
 .theme-light {
@@ -45,3 +47,29 @@ $dark-theme: mat.m2-define-dark-theme((
 
 html, body { height: 100%; }
 body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
+
+/* Utilities */
+.w-100 { width: 100%; }
+.w-75 { width: 75%; }
+.w-50 { width: 50%; }
+.w-25 { width: 25%; }
+.spacer { flex: 1 1 auto; }
+.row { display: flex; gap: 16px; }
+.align-center { align-items: center; }
+.text-right { text-align: right; }
+
+/* Toolbar polish */
+.toolbar { display: flex; gap: var(--toolbar-gap); align-items: center; margin-bottom: 16px; }
+.toolbar mat-form-field { min-width: 220px; }
+
+/* Content area */
+.content { padding: var(--content-padding); max-width: var(--content-max-width); margin: 0 auto; }
+
+/* Tables */
+table[mat-table] { width: 100%; border-radius: 8px; overflow: hidden; }
+th[mat-header-cell] { font-weight: 600; }
+tr[mat-row]:hover { background: rgba(0,0,0,0.02); }
+
+/* Dialogs */
+mat-dialog-content { display: block; }
+mat-form-field.w-100, mat-form-field.w-75, mat-form-field.w-50, mat-form-field.w-25 { width: 100%; }
