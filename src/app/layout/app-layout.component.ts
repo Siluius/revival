@@ -20,6 +20,11 @@ export class AppLayoutComponent {
   private readonly themeService = inject(ThemeService);
   protected readonly loggingOut = signal(false);
   protected readonly theme = this.themeService.theme;
+  protected readonly collapsed = signal(false);
+
+  toggleSidenav(): void {
+    this.collapsed.set(!this.collapsed());
+  }
 
   setTheme(value: 'theme-light' | 'theme-dark'): void {
     this.themeService.set(value);

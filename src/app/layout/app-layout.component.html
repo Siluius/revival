@@ -1,4 +1,4 @@
-<div class="layout">
+<div class="layout" [class.collapsed]="collapsed()">
   <aside class="sidenav">
     <mat-nav-list>
       <a mat-list-item routerLink="/app/dashboard">Dashboard</a>
@@ -10,6 +10,9 @@
     </mat-nav-list>
   </aside>
   <mat-toolbar color="primary" class="topbar">
+    <button mat-icon-button (click)="toggleSidenav()" aria-label="Toggle menu">
+      <mat-icon>menu</mat-icon>
+    </button>
     <span>Revival</span>
     <span class="spacer"></span>
     <mat-button-toggle-group [value]="theme()" (change)="setTheme($event.value)">
