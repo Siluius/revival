@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { Firestore, addDoc, collection, collectionData, deleteDoc, doc, docData, orderBy, query, serverTimestamp, updateDoc, where, writeBatch, increment } from '@angular/fire/firestore';
+import { Firestore, addDoc, collection, collectionData, deleteDoc, doc, docData, orderBy, query, serverTimestamp, updateDoc, where, writeBatch, increment, getDoc } from '@angular/fire/firestore';
 import { Observable, map } from 'rxjs';
 import { NewPayment, Payment } from './payments.interfaces';
 import { ActivitiesService } from '../activities/activities.service';
@@ -46,6 +46,7 @@ export class PaymentsService {
       updatedAt: serverTimestamp()
     });
     await this.updateCounters(data.attendantId, data.eventId, amountUSD);
+    await this.recalculateAttendantEventStatus(data.attendantId, data.eventId);
     const user = this.auth.currentUser;
     await this.activities.logEntity('payments', 'create', 'payments', result.id, { uid: user?.uid ?? null, email: user?.email ?? null, displayName: user?.displayName ?? null }, { data, amountUSD });
     return result.id;
@@ -65,6 +66,7 @@ export class PaymentsService {
     const counterRef = doc(this.firestore, `attendantEventPayments/${current.attendantId}_${current.eventId}`);
     batch.set(counterRef, { attendantId: current.attendantId, eventId: current.eventId, totalUSD: increment(delta) }, { merge: true });
     await batch.commit();
+    await this.recalculateAttendantEventStatus(current.attendantId, current.eventId);
     const user = this.auth.currentUser;
     await this.activities.logEntity('payments', 'update', 'payments', id, { uid: user?.uid ?? null, email: user?.email ?? null, displayName: user?.displayName ?? null }, { previous: current, updated: { amountUSD, originalAmount, originalCurrency } });
   }
@@ -74,6 +76,7 @@ export class PaymentsService {
     if (!current) return;
     await deleteDoc(doc(this.firestore, `payments/${id}`));
     await this.updateCounters(current.attendantId, current.eventId, -current.amountUSD);
+    await this.recalculateAttendantEventStatus(current.attendantId, current.eventId);
     const user = this.auth.currentUser;
     await this.activities.logEntity('payments', 'delete', 'payments', id, { uid: user?.uid ?? null, email: user?.email ?? null, displayName: user?.displayName ?? null }, { previous: current });
   }
@@ -93,5 +96,20 @@ export class PaymentsService {
         await batch.commit();
       });
     });
+  }
+
+  private async recalculateAttendantEventStatus(attendantId: string, eventId: string): Promise<void> {
+    const counterSnap = await getDoc(doc(this.firestore, `attendantEventPayments/${attendantId}_${eventId}`));
+    const totalUSD = (counterSnap.exists() ? (counterSnap.data() as any)?.totalUSD : 0) as number;
+    const eventSnap = await getDoc(doc(this.firestore, `events/${eventId}`));
+    const costUSD = (eventSnap.exists() ? (eventSnap.data() as any)?.costUSD : null) as number | null;
+    let status: 'unpaid' | 'partial' | 'paid' | 'cancelled' = 'unpaid';
+    if (costUSD && costUSD > 0) {
+      status = totalUSD >= costUSD ? 'cancelled' : totalUSD > 0 ? 'partial' : 'unpaid';
+    } else {
+      status = totalUSD > 0 ? 'partial' : 'unpaid';
+    }
+    const attRef = doc(this.firestore, `attendants/${attendantId}`);
+    await updateDoc(attRef, { [`eventPayments.${eventId}`]: { totalUSD, status } });
   }
 }

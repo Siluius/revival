@@ -1,92 +1,44 @@
-import { Component, OnInit, ViewChild, computed, effect, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { MatTableDataSource, MatTableModule } from '@angular/material/table';
-import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
-import { MatSort, MatSortModule } from '@angular/material/sort';
+import { MatTableModule } from '@angular/material/table';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
-import { MatSelectModule } from '@angular/material/select';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
-import { MatMenuModule } from '@angular/material/menu';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
-import { EventsService, AppEvent, EventStatus } from '../../../shared/events/events.service';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { EventsService } from '../../../shared/events/events.service';
+import { AppEvent } from '../../../shared/events/events.interfaces';
 import { EventFormDialogComponent } from './event-form-dialog.component';
 
 @Component({
   selector: 'app-events',
   standalone: true,
-  imports: [
-    CommonModule,
-    MatTableModule,
-    MatPaginatorModule,
-    MatSortModule,
-    MatFormFieldModule,
-    MatInputModule,
-    MatSelectModule,
-    MatButtonModule,
-    MatIconModule,
-    MatMenuModule,
-    MatDialogModule
-  ],
+  imports: [CommonModule, MatTableModule, MatFormFieldModule, MatInputModule, MatButtonModule, MatIconModule, MatDialogModule],
   templateUrl: './events.component.html'
 })
-export class EventsComponent implements OnInit {
-  private readonly eventsService = inject(EventsService);
+export class EventsComponent {
+  private readonly service = inject(EventsService);
   private readonly dialog = inject(MatDialog);
 
-  displayedColumns: string[] = ['name', 'description', 'status', 'start', 'end', 'actions'];
-  dataSource = new MatTableDataSource<AppEvent>([]);
-
   protected readonly search = signal('');
-  protected readonly statusFilter = signal<EventStatus | 'all'>('all');
+  protected readonly allEvents = toSignal(this.service.getAll$(), { initialValue: [] as AppEvent[] });
+  protected readonly filtered = computed(() => {
+    const term = this.search().toLowerCase().trim();
+    const list = this.allEvents();
+    if (!term) return list;
+    return list.filter(e => (e.name?.toLowerCase().includes(term) || (e.description ?? '').toLowerCase().includes(term)));
+  });
 
-  @ViewChild(MatPaginator) paginator!: MatPaginator;
-  @ViewChild(MatSort) sort!: MatSort;
+  protected readonly displayedColumns = ['name', 'description', 'costUSD', 'actions'] as const;
 
-  ngOnInit(): void {
-    this.dataSource.filterPredicate = (data: AppEvent, filter: string) => {
-      const f = JSON.parse(filter) as { q: string; status: EventStatus | 'all' };
-      const term = f.q.toLowerCase();
-      const matchesTerm =
-        data.name.toLowerCase().includes(term) ||
-        data.description.toLowerCase().includes(term) ||
-        data.status.toLowerCase().includes(term);
-      const matchesStatus = f.status === 'all' ? true : data.status === f.status;
-      return matchesTerm && matchesStatus;
-    };
+  trackById(_index: number, item: AppEvent): string { return item.id; }
 
-    this.eventsService.streamAll$().subscribe(rows => {
-      this.dataSource.data = rows;
-      this.applyFilter();
-    });
-
-    effect(() => {
-      // react to changes in search or status
-      this.applyFilter();
-    });
+  add(): void {
+    this.dialog.open(EventFormDialogComponent, { width: '480px' });
   }
 
-  ngAfterViewInit(): void {
-    this.dataSource.paginator = this.paginator;
-    this.dataSource.sort = this.sort;
-  }
-
-  applyFilter(): void {
-    const filterValue = JSON.stringify({ q: this.search().trim().toLowerCase(), status: this.statusFilter() });
-    this.dataSource.filter = filterValue;
-    if (this.dataSource.paginator) {
-      this.dataSource.paginator.firstPage();
-    }
-  }
-
-  openCreateDialog(): void {
-    const ref = this.dialog.open(EventFormDialogComponent, { data: null });
-    ref.afterClosed().subscribe();
-  }
-
-  openEditDialog(event: AppEvent): void {
-    const ref = this.dialog.open(EventFormDialogComponent, { data: event });
-    ref.afterClosed().subscribe();
+  edit(evt: AppEvent): void {
+    this.dialog.open(EventFormDialogComponent, { width: '480px', data: evt });
   }
 }

@@ -1,5 +1,5 @@
 export type Gender = 'male' | 'female' | 'other' | 'prefer_not_to_say';
-export type PaymentStatus = 'unpaid' | 'partial' | 'paid';
+export type PaymentStatus = 'unpaid' | 'partial' | 'paid' | 'cancelled';
 
 export interface Attendant {
   id: string;
@@ -10,6 +10,8 @@ export interface Attendant {
   gender?: Gender | null;
   organizationId?: string | null;
   paymentStatus?: PaymentStatus | null;
+  // map of eventId -> totalUSD and status
+  eventPayments?: Record<string, { totalUSD: number; status: PaymentStatus } | undefined>;
   createdAt?: unknown;
   updatedAt?: unknown;
 }
