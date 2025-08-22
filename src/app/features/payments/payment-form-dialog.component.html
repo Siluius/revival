@@ -1,0 +1,30 @@
+<h2 mat-dialog-title>Add Payment for {{ data.attendant.firstName }} {{ data.attendant.lastName }}</h2>
+<div mat-dialog-content>
+  <form [formGroup]="form">
+    <mat-form-field appearance="outline" class="w-100">
+      <mat-label>Event</mat-label>
+      <mat-select formControlName="eventId" required>
+        <mat-option *ngFor="let e of events()" [value]="e.id">{{ e.name }}</mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <div class="row">
+      <mat-form-field appearance="outline" class="w-50">
+        <mat-label>Currency</mat-label>
+        <mat-select formControlName="currency" required>
+          <mat-option value="USD">USD</mat-option>
+          <mat-option value="NIO">NIO</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="w-50">
+        <mat-label>Amount</mat-label>
+        <input matInput type="number" step="0.01" min="0" formControlName="amount" required />
+      </mat-form-field>
+    </div>
+  </form>
+</div>
+<div mat-dialog-actions align="end">
+  <button mat-button mat-dialog-close>Cancel</button>
+  <button mat-flat-button color="primary" (click)="save()" [disabled]="form.invalid">Save</button>
+</div>
