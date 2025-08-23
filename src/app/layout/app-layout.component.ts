@@ -10,11 +10,12 @@ import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MatSelectModule } from '@angular/material/select';
 import { CompanyService } from '../shared/company/company.service';
 import { toSignal } from '@angular/core/rxjs-interop';
+import { IfAdminDirective } from '../shared/auth/if-can-admin.directive';
 
 @Component({
   selector: 'app-layout',
   standalone: true,
-  imports: [RouterLink, RouterOutlet, MatToolbarModule, MatButtonModule, MatListModule, MatIconModule, MatButtonToggleModule, MatSelectModule],
+  imports: [RouterLink, RouterOutlet, MatToolbarModule, MatButtonModule, MatListModule, MatIconModule, MatButtonToggleModule, MatSelectModule, IfAdminDirective],
   templateUrl: './app-layout.component.html',
   styleUrls: ['./app-layout.component.scss']
 })

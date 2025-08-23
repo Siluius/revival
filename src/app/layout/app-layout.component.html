@@ -25,6 +25,12 @@
         <mat-icon>history</mat-icon>
         <span class="label">Activities</span>
       </a>
+      <ng-container *appIfAdmin>
+        <a mat-list-item routerLink="/app/company-users">
+          <mat-icon>admin_panel_settings</mat-icon>
+          <span class="label">Company Users</span>
+        </a>
+      </ng-container>
     </mat-nav-list>
   </aside>
   <mat-toolbar color="primary" class="topbar">

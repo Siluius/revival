@@ -1,6 +1,6 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { Auth } from '@angular/fire/auth';
-import { Firestore, addDoc, collection, collectionData, query, serverTimestamp, where, getDocs } from '@angular/fire/firestore';
+import { Firestore, addDoc, collection, collectionData, query, serverTimestamp, where, getDocs, updateDoc, doc } from '@angular/fire/firestore';
 import { map, Observable, switchMap, of } from 'rxjs';
 import { Company, CompanyMembership } from './company.interfaces';
 import { AuthService } from '../auth/auth.service';
@@ -40,6 +40,34 @@ export class CompanyService {
         return collectionData(q, { idField: 'id' }).pipe(map((rows: any[]) => rows[0] ?? null));
       })
     );
+  }
+
+  getMembershipsForCurrentCompany$(): Observable<CompanyMembership[]> {
+    const companyId = this.selectedCompanyId();
+    if (!companyId) return of([] as CompanyMembership[]);
+    const q = query(collection(this.firestore, 'companyMemberships'), where('companyId', '==', companyId));
+    return collectionData(q, { idField: 'id' }) as unknown as Observable<CompanyMembership[]>;
+  }
+
+  async addUserToCurrentCompanyByEmail(email: string, role: 'viewer' | 'editor' | 'admin' = 'viewer'): Promise<void> {
+    const companyId = this.selectedCompanyId();
+    if (!companyId) throw new Error('No company selected');
+    const u = await getDocs(query(collection(this.firestore, 'users'), where('email', '==', email)));
+    if (u.empty) throw new Error('User not found');
+    const userId = u.docs[0].id;
+    const exists = await getDocs(query(collection(this.firestore, 'companyMemberships'), where('companyId', '==', companyId), where('userId', '==', userId)));
+    if (exists.empty) {
+      await addDoc(collection(this.firestore, 'companyMemberships'), { companyId, userId, role, createdAt: serverTimestamp() });
+    }
+  }
+
+  async updateMembershipRole(userId: string, role: 'viewer' | 'editor' | 'admin'): Promise<void> {
+    const companyId = this.selectedCompanyId();
+    if (!companyId) throw new Error('No company selected');
+    const qSnap = await getDocs(query(collection(this.firestore, 'companyMemberships'), where('companyId', '==', companyId), where('userId', '==', userId)));
+    if (qSnap.empty) throw new Error('Membership not found');
+    const id = qSnap.docs[0].id;
+    await updateDoc(doc(this.firestore, `companyMemberships/${id}`), { role });
   }
 
   async createCompany(name: string): Promise<string> {
