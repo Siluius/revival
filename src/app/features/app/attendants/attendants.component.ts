@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatTableModule } from '@angular/material/table';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -18,11 +18,13 @@ import { FindByIdPipe } from '../../../shared/utils/find-by-id.pipe';
 import { EventsService } from '../../../shared/events/events.service';
 import { AppEvent } from '../../../shared/events/events.interfaces';
 import { PaymentFormDialogComponent } from '../../payments/payment-form-dialog.component';
+import { MatSort, MatSortModule, Sort } from '@angular/material/sort';
+import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
 
 @Component({
   selector: 'app-attendants',
   standalone: true,
-  imports: [CommonModule, RouterLink, MatTableModule, MatFormFieldModule, MatInputModule, MatButtonModule, MatIconModule, MatSelectModule, MatDialogModule, FindByIdPipe],
+  imports: [CommonModule, RouterLink, MatTableModule, MatFormFieldModule, MatInputModule, MatButtonModule, MatIconModule, MatSelectModule, MatDialogModule, FindByIdPipe, MatSortModule, MatPaginatorModule],
   templateUrl: './attendants.component.html'
 })
 export class AttendantsComponent {
@@ -30,6 +32,9 @@ export class AttendantsComponent {
   private readonly orgService = inject(OrganizationsService);
   private readonly eventsService = inject(EventsService);
   private readonly dialog = inject(MatDialog);
+
+  @ViewChild(MatSort) sort?: MatSort;
+  @ViewChild(MatPaginator) paginator?: MatPaginator;
 
   protected readonly search = signal('');
   protected readonly paymentStatus = signal<PaymentStatus | 'all'>('all');
@@ -41,13 +46,15 @@ export class AttendantsComponent {
   protected readonly organizations = toSignal(this.orgService.getAll$(), { initialValue: [] as Organization[] });
   protected readonly events = toSignal(this.eventsService.getAll$(), { initialValue: [] as AppEvent[] });
 
+  protected readonly sortState = signal<Sort>({ active: 'lastName', direction: 'asc' });
+
   protected readonly filtered = computed(() => {
     const term = this.search().toLowerCase().trim();
     const gender = this.gender();
     const payment = this.paymentStatus();
     const orgId = this.organizationId();
     const evtId = this.eventId();
-    return this.allAttendants().filter(a => {
+    const list = this.allAttendants().filter(a => {
       const matchesTerm = !term || `${a.firstName} ${a.lastName}`.toLowerCase().includes(term) || (a.address ?? '').toLowerCase().includes(term);
       const matchesGender = gender === 'all' || a.gender === gender;
       const matchesOrg = orgId === 'all' || a.organizationId === orgId;
@@ -55,6 +62,36 @@ export class AttendantsComponent {
       const matchesPayment = payment === 'all' || effectiveStatus === payment;
       return matchesTerm && matchesGender && matchesPayment && matchesOrg;
     });
+    const s = this.sortState();
+    const sorted = [...list].sort((a, b) => {
+      const dir = s.direction === 'desc' ? -1 : 1;
+      const aVal = ((): any => {
+        switch (s.active) {
+          case 'name': return `${a.lastName} ${a.firstName}`;
+          case 'gender': return a.gender ?? '';
+          case 'age': return this.age(a) ?? -1;
+          case 'organization': return (this.organizations().find(o => o.id === a.organizationId)?.name ?? '');
+          case 'paymentStatus': return a.paymentStatus ?? '';
+          default: return `${a.lastName} ${a.firstName}`;
+        }
+      })();
+      const bVal = ((): any => {
+        switch (s.active) {
+          case 'name': return `${b.lastName} ${b.firstName}`;
+          case 'gender': return b.gender ?? '';
+          case 'age': return this.age(b) ?? -1;
+          case 'organization': return (this.organizations().find(o => o.id === b.organizationId)?.name ?? '');
+          case 'paymentStatus': return b.paymentStatus ?? '';
+          default: return `${b.lastName} ${b.firstName}`;
+        }
+      })();
+      if (typeof aVal === 'number' && typeof bVal === 'number') return (aVal - bVal) * dir;
+      return String(aVal).localeCompare(String(bVal)) * dir;
+    });
+    const pageIndex = this.paginator?.pageIndex ?? 0;
+    const pageSize = this.paginator?.pageSize ?? sorted.length;
+    const start = pageIndex * pageSize;
+    return sorted.slice(start, start + pageSize);
   });
 
   protected readonly displayedColumns = ['name', 'gender', 'age', 'organization', 'paymentStatus', 'payments', 'actions'] as const;
