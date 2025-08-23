@@ -1,9 +1,8 @@
 import { Injectable, inject, signal } from '@angular/core';
-import { Auth } from '@angular/fire/auth';
-import { Firestore, addDoc, collection, collectionData, query, serverTimestamp, where, getDocs, updateDoc, doc, docData, deleteDoc, getDoc } from '@angular/fire/firestore';
+import { Auth, authState } from '@angular/fire/auth';
+import { Firestore, addDoc, collection, collectionData, query, serverTimestamp, where, getDocs, updateDoc, doc, getDoc } from '@angular/fire/firestore';
 import { map, Observable, switchMap, of } from 'rxjs';
 import { Company, CompanyMembership } from './company.interfaces';
-import { AuthService } from '../auth/auth.service';
 
 export interface CompanyInvite {
   id: string;
@@ -20,7 +19,6 @@ export interface CompanyInvite {
 export class CompanyService {
   private readonly firestore = inject(Firestore);
   private readonly auth = inject(Auth);
-  private readonly authService = inject(AuthService);
   readonly selectedCompanyId = signal<string | null>(localStorage.getItem('companyId') || null);
 
   setSelectedCompanyId(id: string | null): void {
@@ -44,7 +42,7 @@ export class CompanyService {
   }
 
   getMyMembership$(companyId: string): Observable<CompanyMembership | null> {
-    return this.authService.authState$.pipe(
+    return authState(this.auth).pipe(
       switchMap(user => {
         if (!user) return of(null);
         const q = query(collection(this.firestore, 'companyMemberships'), where('companyId', '==', companyId), where('userId', '==', user.uid));
@@ -69,7 +67,7 @@ export class CompanyService {
   }
 
   getMyInvitations$(): Observable<CompanyInvite[]> {
-    return this.authService.authState$.pipe(
+    return authState(this.auth).pipe(
       switchMap(user => {
         const email = user?.email?.toLowerCase();
         if (!email) return of([] as CompanyInvite[]);
@@ -84,7 +82,6 @@ export class CompanyService {
     if (!inviteSnap.exists()) throw new Error('Invitation not found');
     const invite = inviteSnap.data() as any;
     const uid = this.auth.currentUser?.uid as string;
-    // add membership if missing
     const exists = await getDocs(query(collection(this.firestore, 'companyMemberships'), where('companyId', '==', invite.companyId), where('userId', '==', uid)));
     if (exists.empty) {
       await addDoc(collection(this.firestore, 'companyMemberships'), { companyId: invite.companyId, userId: uid, role: invite.role, createdAt: serverTimestamp() });
@@ -98,7 +95,6 @@ export class CompanyService {
   }
 
   async addUserToCurrentCompanyByEmail(email: string, role: 'viewer' | 'editor' | 'admin' = 'viewer'): Promise<void> {
-    // Kept for backwards compatibility; create invitation instead
     await this.createInvitation(email, role);
   }
 
