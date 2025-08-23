@@ -1,9 +1,20 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { Auth } from '@angular/fire/auth';
-import { Firestore, addDoc, collection, collectionData, query, serverTimestamp, where, getDocs, updateDoc, doc } from '@angular/fire/firestore';
+import { Firestore, addDoc, collection, collectionData, query, serverTimestamp, where, getDocs, updateDoc, doc, docData, deleteDoc, getDoc } from '@angular/fire/firestore';
 import { map, Observable, switchMap, of } from 'rxjs';
 import { Company, CompanyMembership } from './company.interfaces';
 import { AuthService } from '../auth/auth.service';
+
+export interface CompanyInvite {
+  id: string;
+  companyId: string;
+  email: string; // normalized lowercased email
+  role: 'viewer' | 'editor' | 'admin';
+  status: 'pending' | 'accepted' | 'declined' | 'cancelled';
+  createdBy: string; // uid
+  createdAt?: unknown;
+  respondedAt?: unknown;
+}
 
 @Injectable({ providedIn: 'root' })
 export class CompanyService {
@@ -49,16 +60,46 @@ export class CompanyService {
     return collectionData(q, { idField: 'id' }) as unknown as Observable<CompanyMembership[]>;
   }
 
-  async addUserToCurrentCompanyByEmail(email: string, role: 'viewer' | 'editor' | 'admin' = 'viewer'): Promise<void> {
-    const companyId = this.selectedCompanyId();
-    if (!companyId) throw new Error('No company selected');
-    const u = await getDocs(query(collection(this.firestore, 'users'), where('email', '==', email)));
-    if (u.empty) throw new Error('User not found');
-    const userId = u.docs[0].id;
-    const exists = await getDocs(query(collection(this.firestore, 'companyMemberships'), where('companyId', '==', companyId), where('userId', '==', userId)));
+  async createInvitation(email: string, role: 'viewer' | 'editor' | 'admin' = 'viewer'): Promise<string> {
+    const companyId = this.selectedCompanyId(); if (!companyId) throw new Error('No company selected');
+    const createdBy = this.auth.currentUser?.uid as string;
+    const normalized = email.trim().toLowerCase();
+    const ref = await addDoc(collection(this.firestore, 'companyInvites'), { companyId, email: normalized, role, status: 'pending', createdBy, createdAt: serverTimestamp() });
+    return ref.id;
+  }
+
+  getMyInvitations$(): Observable<CompanyInvite[]> {
+    return this.authService.authState$.pipe(
+      switchMap(user => {
+        const email = user?.email?.toLowerCase();
+        if (!email) return of([] as CompanyInvite[]);
+        const q = query(collection(this.firestore, 'companyInvites'), where('email', '==', email), where('status', '==', 'pending'));
+        return collectionData(q, { idField: 'id' }) as unknown as Observable<CompanyInvite[]>;
+      })
+    );
+  }
+
+  async acceptInvitation(inviteId: string): Promise<void> {
+    const inviteSnap = await getDoc(doc(this.firestore, `companyInvites/${inviteId}`));
+    if (!inviteSnap.exists()) throw new Error('Invitation not found');
+    const invite = inviteSnap.data() as any;
+    const uid = this.auth.currentUser?.uid as string;
+    // add membership if missing
+    const exists = await getDocs(query(collection(this.firestore, 'companyMemberships'), where('companyId', '==', invite.companyId), where('userId', '==', uid)));
     if (exists.empty) {
-      await addDoc(collection(this.firestore, 'companyMemberships'), { companyId, userId, role, createdAt: serverTimestamp() });
+      await addDoc(collection(this.firestore, 'companyMemberships'), { companyId: invite.companyId, userId: uid, role: invite.role, createdAt: serverTimestamp() });
     }
+    await updateDoc(doc(this.firestore, `companyInvites/${inviteId}`), { status: 'accepted', respondedAt: serverTimestamp() });
+    this.setSelectedCompanyId(invite.companyId);
+  }
+
+  async declineInvitation(inviteId: string): Promise<void> {
+    await updateDoc(doc(this.firestore, `companyInvites/${inviteId}`), { status: 'declined', respondedAt: serverTimestamp() });
+  }
+
+  async addUserToCurrentCompanyByEmail(email: string, role: 'viewer' | 'editor' | 'admin' = 'viewer'): Promise<void> {
+    // Kept for backwards compatibility; create invitation instead
+    await this.createInvitation(email, role);
   }
 
   async updateMembershipRole(userId: string, role: 'viewer' | 'editor' | 'admin'): Promise<void> {
