@@ -10,6 +10,7 @@ import { PaymentsService } from '../../shared/payments/payments.service';
 import { EventsService } from '../../shared/events/events.service';
 import { AppEvent } from '../../shared/events/events.interfaces';
 import { toSignal } from '@angular/core/rxjs-interop';
+import { LoadingService } from '../../shared/loading/loading.service';
 
 interface PaymentDialogData { attendant: { id: string; firstName: string; lastName: string }; paymentId?: string; }
 
@@ -24,6 +25,7 @@ export class PaymentFormDialogComponent {
   private readonly service = inject(PaymentsService);
   private readonly eventsService = inject(EventsService);
   private readonly dialogRef = inject(MatDialogRef<PaymentFormDialogComponent>);
+  protected readonly loading = inject(LoadingService);
   protected readonly data = inject<PaymentDialogData>(MAT_DIALOG_DATA);
 
   protected readonly events = toSignal(this.eventsService.getAll$(), { initialValue: [] as AppEvent[] });
@@ -36,13 +38,15 @@ export class PaymentFormDialogComponent {
 
   async save(): Promise<void> {
     if (this.form.invalid) return;
-    const value = this.form.getRawValue();
-    await this.service.create({
-      attendantId: this.data.attendant.id,
-      eventId: value.eventId!,
-      currency: value.currency!,
-      amount: Number(value.amount)
+    await this.loading.wrap(async () => {
+      const value = this.form.getRawValue();
+      await this.service.create({
+        attendantId: this.data.attendant.id,
+        eventId: value.eventId!,
+        currency: value.currency!,
+        amount: Number(value.amount)
+      });
+      this.dialogRef.close(true);
     });
-    this.dialogRef.close(true);
   }
 }

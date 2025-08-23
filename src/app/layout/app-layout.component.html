@@ -55,6 +55,10 @@
   <main class="content">
     <router-outlet />
   </main>
+
+  <div class="loading-overlay" *ngIf="loading() > 0">
+    <div class="spinner"></div>
+  </div>
 </div>
 
 

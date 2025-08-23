@@ -7,6 +7,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { OrganizationsService } from '../../../shared/organizations/organizations.service';
 import { Organization } from '../../../shared/organizations/organizations.interfaces';
+import { LoadingService } from '../../../shared/loading/loading.service';
 
 @Component({
   selector: 'app-organization-form-dialog',
@@ -18,6 +19,7 @@ export class OrganizationFormDialogComponent {
   private readonly fb = inject(FormBuilder);
   private readonly service = inject(OrganizationsService);
   private readonly dialogRef = inject(MatDialogRef<OrganizationFormDialogComponent>);
+  protected readonly loading = inject(LoadingService);
   protected readonly data = inject<Organization | undefined>(MAT_DIALOG_DATA, { optional: true });
 
   protected readonly form = this.fb.group({
@@ -33,13 +35,15 @@ export class OrganizationFormDialogComponent {
 
   async save(): Promise<void> {
     if (this.form.invalid) return;
-    const value = this.form.getRawValue();
-    if (this.data?.id) {
-      await this.service.update(this.data.id, { name: value.name!, description: value.description ?? '' });
-      this.dialogRef.close(this.data.id);
-    } else {
-      const id = await this.service.create({ name: value.name!, description: value.description ?? '' });
-      this.dialogRef.close(id);
-    }
+    await this.loading.wrap(async () => {
+      const value = this.form.getRawValue();
+      if (this.data?.id) {
+        await this.service.update(this.data.id, { name: value.name!, description: value.description ?? '' });
+        this.dialogRef.close(this.data.id);
+      } else {
+        const id = await this.service.create({ name: value.name!, description: value.description ?? '' });
+        this.dialogRef.close(id);
+      }
+    });
   }
 }

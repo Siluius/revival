@@ -15,6 +15,7 @@ import { OrganizationsService } from '../../../shared/organizations/organization
 import { Organization } from '../../../shared/organizations/organizations.interfaces';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { OrganizationFormDialogComponent } from '../organizations/organization-form-dialog.component';
+import { LoadingService } from '../../../shared/loading/loading.service';
 
 @Component({
   selector: 'app-attendant-form-dialog',
@@ -28,6 +29,7 @@ export class AttendantFormDialogComponent {
   private readonly orgService = inject(OrganizationsService);
   private readonly dialogRef = inject(MatDialogRef<AttendantFormDialogComponent>);
   private readonly dialog = inject(MatDialog);
+  protected readonly loading = inject(LoadingService);
   protected readonly data = inject<Attendant | undefined>(MAT_DIALOG_DATA, { optional: true });
 
   protected readonly organizations = toSignal(this.orgService.getAll$(), { initialValue: [] as Organization[] });
@@ -56,21 +58,23 @@ export class AttendantFormDialogComponent {
 
   async save(): Promise<void> {
     if (this.form.invalid) return;
-    const value = this.form.getRawValue();
-    const payload = {
-      firstName: value.firstName!,
-      lastName: value.lastName!,
-      address: value.address ?? '',
-      dateOfBirth: value.dateOfBirth ?? null,
-      gender: value.gender ?? null,
-      organizationId: value.organizationId ?? null
-    };
-    if (this.data?.id) {
-      await this.service.update(this.data.id, payload);
-    } else {
-      await this.service.create(payload);
-    }
-    this.dialogRef.close(true);
+    await this.loading.wrap(async () => {
+      const value = this.form.getRawValue();
+      const payload = {
+        firstName: value.firstName!,
+        lastName: value.lastName!,
+        address: value.address ?? '',
+        dateOfBirth: value.dateOfBirth ?? null,
+        gender: value.gender ?? null,
+        organizationId: value.organizationId ?? null
+      };
+      if (this.data?.id) {
+        await this.service.update(this.data.id, payload);
+      } else {
+        await this.service.create(payload);
+      }
+      this.dialogRef.close(true);
+    });
   }
 
   addOrganization(): void {

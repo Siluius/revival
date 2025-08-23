@@ -11,6 +11,7 @@ import { EventsService } from '../../../shared/events/events.service';
 import { AppEvent } from '../../../shared/events/events.interfaces';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { PaymentFormDialogComponent } from '../../payments/payment-form-dialog.component';
+import { LoadingService } from '../../../shared/loading/loading.service';
 
 @Component({
   selector: 'app-attendants-payments',
@@ -23,6 +24,7 @@ export class AttendantsPaymentsComponent {
   private readonly payments = inject(PaymentsService);
   private readonly events = inject(EventsService);
   private readonly dialog = inject(MatDialog);
+  private readonly loading = inject(LoadingService);
 
   protected readonly attendantId = this.route.snapshot.paramMap.get('attendantId') as string;
   protected readonly eventsList = toSignal(this.events.getAll$(), { initialValue: [] as AppEvent[] });
@@ -45,6 +47,8 @@ export class AttendantsPaymentsComponent {
   }
 
   async deletePayment(row: Payment): Promise<void> {
-    await this.payments.delete(row.id);
+    await this.loading.wrap(async () => {
+      await this.payments.delete(row.id);
+    });
   }
 }
