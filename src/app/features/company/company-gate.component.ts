@@ -19,6 +19,7 @@ export class CompanyGateComponent {
   private readonly company = inject(CompanyService);
 
   protected readonly companies = toSignal(this.company.getMyCompanies$(), { initialValue: [] as any[] });
+  protected readonly invites = toSignal(this.company.getMyInvitations$(), { initialValue: [] as any[] });
   protected readonly creating = signal(false);
   protected readonly joining = signal(false);
 
@@ -28,4 +29,7 @@ export class CompanyGateComponent {
   async select(id: string) { this.company.setSelectedCompanyId(id); }
   async create() { if (this.createForm.invalid) return; await this.company.createCompany(this.createForm.getRawValue().name!); }
   async join() { if (this.joinForm.invalid) return; await this.company.joinCompanyByName(this.joinForm.getRawValue().name!); }
+
+  async accept(inviteId: string) { await this.company.acceptInvitation(inviteId); }
+  async decline(inviteId: string) { await this.company.declineInvitation(inviteId); }
 }
