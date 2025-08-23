@@ -70,7 +70,7 @@ table[mat-table], .mat-mdc-table { width: 100% !important; }
 .mat-mdc-cell, .mat-mdc-header-cell { padding: 8px 12px; }
 
 /* Table container for full-height pages */
-.table-container { display: flex; flex-direction: column; height: 100%; }
+.table-container { display: flex; flex-direction: column; }
 .table-container table[mat-table] { flex: 1 1 auto; overflow: auto; }
 .table-container mat-paginator { margin-top: 8px; }
 
