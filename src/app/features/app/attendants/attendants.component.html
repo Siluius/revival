@@ -49,6 +49,11 @@
     <td mat-cell *matCellDef="let row">{{ row.gender || '-' }}</td>
   </ng-container>
 
+  <ng-container matColumnDef="age">
+    <th mat-header-cell *matHeaderCellDef>Age</th>
+    <td mat-cell *matCellDef="let row">{{ age(row) ?? '-' }}</td>
+  </ng-container>
+
   <ng-container matColumnDef="organization">
     <th mat-header-cell *matHeaderCellDef>Organization</th>
     <td mat-cell *matCellDef="let row">{{ (organizations() | findById: row.organizationId)?.name || '-' }}</td>

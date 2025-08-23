@@ -57,7 +57,7 @@ export class AttendantsComponent {
     });
   });
 
-  protected readonly displayedColumns = ['name', 'gender', 'organization', 'paymentStatus', 'payments', 'actions'] as const;
+  protected readonly displayedColumns = ['name', 'gender', 'age', 'organization', 'paymentStatus', 'payments', 'actions'] as const;
 
   trackById(_index: number, item: Attendant): string { return item.id; }
 
@@ -69,6 +69,18 @@ export class AttendantsComponent {
       if (v && typeof v.totalUSD === 'number') total += v.totalUSD;
     }
     return total;
+  }
+
+  age(a: Attendant): number | null {
+    const raw = (a as any)?.dateOfBirth;
+    if (!raw) return null;
+    const d: Date = raw instanceof Date ? raw : (typeof raw?.toDate === 'function' ? raw.toDate() : new Date(raw));
+    if (!(d instanceof Date) || isNaN(d.getTime())) return null;
+    const today = new Date();
+    let years = today.getFullYear() - d.getFullYear();
+    const m = today.getMonth() - d.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < d.getDate())) years--;
+    return years;
   }
 
   add(): void {
@@ -83,7 +95,7 @@ export class AttendantsComponent {
     this.dialog.open(PaymentFormDialogComponent, { width: '560px', data: { attendant: row } });
   }
 
-  viewPayments(row: Attendant): void {
-    // navigation will be handled via routerLink in template
+  viewPayments(_row: Attendant): void {
+    // navigation handled via routerLink in template
   }
 }
