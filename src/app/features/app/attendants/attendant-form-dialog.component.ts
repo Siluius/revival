@@ -46,12 +46,18 @@ export class AttendantFormDialogComponent {
 
   constructor() {
     if (this.data) {
+      const rawDob: any = (this.data as any).dateOfBirth;
+      const dob: Date | null = rawDob
+        ? (rawDob instanceof Date
+            ? rawDob
+            : (typeof rawDob?.toDate === 'function' ? rawDob.toDate() : new Date(rawDob)))
+        : null;
       this.form.patchValue({
         firstName: this.data.firstName,
         lastName: this.data.lastName,
         address: this.data.address ?? '',
-        phone: this.data.phone ?? '',
-        dateOfBirth: this.data.dateOfBirth ? new Date(this.data.dateOfBirth) : null,
+        phone: (this.data as any).phone ?? '',
+        dateOfBirth: dob,
         gender: this.data.gender ?? null,
         organizationId: this.data.organizationId ?? null
       });
