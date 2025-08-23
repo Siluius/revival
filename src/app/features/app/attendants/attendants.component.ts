@@ -61,6 +61,16 @@ export class AttendantsComponent {
 
   trackById(_index: number, item: Attendant): string { return item.id; }
 
+  overallTotalUSD(a: Attendant): number {
+    const map = a.eventPayments || {};
+    let total = 0;
+    for (const key of Object.keys(map)) {
+      const v = map[key];
+      if (v && typeof v.totalUSD === 'number') total += v.totalUSD;
+    }
+    return total;
+  }
+
   add(): void {
     this.dialog.open(AttendantFormDialogComponent, { width: '640px' });
   }

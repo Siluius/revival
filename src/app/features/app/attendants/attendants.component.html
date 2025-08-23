@@ -67,7 +67,7 @@
         <small>({{ row.eventPayments?.[eventId()]?.status || '-' }})</small>
       </ng-container>
       <ng-template #overall>
-        {{ row.totalPaymentsUSD || 0 | number: '1.2-2' }}
+        {{ overallTotalUSD(row) | number: '1.2-2' }}
       </ng-template>
     </td>
   </ng-container>
