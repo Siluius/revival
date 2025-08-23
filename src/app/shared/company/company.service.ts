@@ -27,12 +27,18 @@ export class CompanyService {
   }
 
   getMyCompanies$(): Observable<Company[]> {
-    const uid = this.auth.currentUser?.uid;
-    if (!uid) return of([] as Company[]);
-    const membershipsQ = query(collection(this.firestore, 'companyMemberships'), where('userId', '==', uid));
-    return collectionData(membershipsQ, { idField: 'id' }).pipe(
-      map((ms: any[]) => ms.map(m => m.companyId)),
-      switchMap(companyIds => companyIds.length ? collectionData(query(collection(this.firestore, 'companies'), where('__name__', 'in', companyIds)), { idField: 'id' }) as Observable<Company[]> : of([] as Company[]))
+    return authState(this.auth).pipe(
+      switchMap(user => {
+        if (!user) return of([] as Company[]);
+        const membershipsQ = query(collection(this.firestore, 'companyMemberships'), where('userId', '==', user.uid));
+        return collectionData(membershipsQ, { idField: 'id' }).pipe(
+          map((ms: any[]) => ms.map(m => m.companyId)),
+          switchMap(companyIds => companyIds.length
+            ? collectionData(query(collection(this.firestore, 'companies'), where('__name__', 'in', companyIds)), { idField: 'id' }) as Observable<Company[]>
+            : of([] as Company[])
+          )
+        );
+      })
     );
   }
 

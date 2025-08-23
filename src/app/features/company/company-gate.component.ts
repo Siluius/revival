@@ -7,6 +7,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatListModule } from '@angular/material/list';
 import { CompanyService } from '../../shared/company/company.service';
 import { toSignal } from '@angular/core/rxjs-interop';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-company-gate',
@@ -17,6 +18,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
 export class CompanyGateComponent {
   private readonly fb = inject(FormBuilder);
   private readonly company = inject(CompanyService);
+  private readonly router = inject(Router);
 
   protected readonly companies = toSignal(this.company.getMyCompanies$(), { initialValue: [] as any[] });
   protected readonly invites = toSignal(this.company.getMyInvitations$(), { initialValue: [] as any[] });
@@ -26,10 +28,10 @@ export class CompanyGateComponent {
   readonly createForm = this.fb.group({ name: ['', [Validators.required]] });
   readonly joinForm = this.fb.group({ name: ['', [Validators.required]] });
 
-  async select(id: string) { this.company.setSelectedCompanyId(id); }
-  async create() { if (this.createForm.invalid) return; await this.company.createCompany(this.createForm.getRawValue().name!); }
-  async join() { if (this.joinForm.invalid) return; await this.company.joinCompanyByName(this.joinForm.getRawValue().name!); }
+  async select(id: string) { this.company.setSelectedCompanyId(id); await this.router.navigateByUrl('/app/dashboard'); }
+  async create() { if (this.createForm.invalid) return; await this.company.createCompany(this.createForm.getRawValue().name!); await this.router.navigateByUrl('/app/dashboard'); }
+  async join() { if (this.joinForm.invalid) return; await this.company.joinCompanyByName(this.joinForm.getRawValue().name!); await this.router.navigateByUrl('/app/dashboard'); }
 
-  async accept(inviteId: string) { await this.company.acceptInvitation(inviteId); }
+  async accept(inviteId: string) { await this.company.acceptInvitation(inviteId); await this.router.navigateByUrl('/app/dashboard'); }
   async decline(inviteId: string) { await this.company.declineInvitation(inviteId); }
 }

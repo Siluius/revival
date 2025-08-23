@@ -39,6 +39,7 @@
     </button>
     <span>Revival</span>
     <span class="spacer"></span>
+    <a mat-button routerLink="/company">Manage Companies</a>
     <mat-form-field appearance="outline" style="min-width: 220px; margin-right: 12px;">
       <mat-label>Company</mat-label>
       <mat-select [value]="companyId()" (selectionChange)="setCompany($event.value)">
