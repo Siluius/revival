@@ -1,6 +1,6 @@
 .layout { display: grid; grid-template-columns: 240px 1fr; grid-template-rows: 64px 1fr; height: 100vh; }
 .layout.collapsed { grid-template-columns: 64px 1fr; }
-.sidenav { grid-row: 1 / span 2; grid-column: 1; padding: 8px 0; border-right: 1px solid #e0e0e0; background: #fff; overflow: auto; }
+.sidenav { grid-row: 1 / span 2; grid-column: 1; padding: 8px 0; border-right: 1px solid #e0e0e0; overflow: auto; }
 .topbar { grid-row: 1; grid-column: 2; padding: 0 16px; display: flex; align-items: center; gap: 8px; }
 .spacer { flex: 1; }
 .content { grid-row: 2; grid-column: 2; padding: var(--content-padding); overflow: auto; }
@@ -14,6 +14,9 @@
 .layout.collapsed .sidenav .mat-mdc-list-item { justify-content: center; gap: 0; }
 .layout.collapsed .sidenav a[mat-list-item] .label { display: none; }
 .layout.collapsed .sidenav a[mat-list-item] { padding-left: 0; padding-right: 0; }
+
+/* Theme-specific sidenav backgrounds */
+:host-context(.theme-light) .sidenav { background: #fff; border-right-color: #e0e0e0; }
 
 /* Dark theme overrides for better contrast */
 :host-context(.theme-dark) .sidenav { background: #161718; border-right-color: rgba(255,255,255,0.08); }
