@@ -7,28 +7,31 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatListModule } from '@angular/material/list';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
+import { MatSelectModule } from '@angular/material/select';
+import { CompanyService } from '../shared/company/company.service';
+import { toSignal } from '@angular/core/rxjs-interop';
 
 @Component({
   selector: 'app-layout',
   standalone: true,
-  imports: [RouterLink, RouterOutlet, MatToolbarModule, MatButtonModule, MatListModule, MatIconModule, MatButtonToggleModule],
+  imports: [RouterLink, RouterOutlet, MatToolbarModule, MatButtonModule, MatListModule, MatIconModule, MatButtonToggleModule, MatSelectModule],
   templateUrl: './app-layout.component.html',
   styleUrls: ['./app-layout.component.scss']
 })
 export class AppLayoutComponent {
   private readonly auth = inject(AuthService);
   private readonly themeService = inject(ThemeService);
+  private readonly companies = inject(CompanyService);
   protected readonly loggingOut = signal(false);
   protected readonly theme = this.themeService.theme;
   protected readonly collapsed = signal(false);
 
-  toggleSidenav(): void {
-    this.collapsed.set(!this.collapsed());
-  }
+  protected readonly companyId = this.companies.selectedCompanyId;
+  protected readonly myCompanies = toSignal(this.companies.getMyCompanies$(), { initialValue: [] as any[] });
 
-  setTheme(value: 'theme-light' | 'theme-dark'): void {
-    this.themeService.set(value);
-  }
+  toggleSidenav(): void { this.collapsed.set(!this.collapsed()); }
+  setTheme(value: 'theme-light' | 'theme-dark'): void { this.themeService.set(value); }
+  setCompany(value: string): void { this.companies.setSelectedCompanyId(value); }
 
   logout(): void {
     if (this.loggingOut()) return;
