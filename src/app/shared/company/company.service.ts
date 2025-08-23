@@ -3,11 +3,13 @@ import { Auth } from '@angular/fire/auth';
 import { Firestore, addDoc, collection, collectionData, query, serverTimestamp, where, getDocs } from '@angular/fire/firestore';
 import { map, Observable, switchMap, of } from 'rxjs';
 import { Company, CompanyMembership } from './company.interfaces';
+import { AuthService } from '../auth/auth.service';
 
 @Injectable({ providedIn: 'root' })
 export class CompanyService {
   private readonly firestore = inject(Firestore);
   private readonly auth = inject(Auth);
+  private readonly authService = inject(AuthService);
   readonly selectedCompanyId = signal<string | null>(localStorage.getItem('companyId') || null);
 
   setSelectedCompanyId(id: string | null): void {
@@ -28,6 +30,16 @@ export class CompanyService {
   getMembershipFor$(companyId: string, userId: string): Observable<CompanyMembership | null> {
     const q = query(collection(this.firestore, 'companyMemberships'), where('companyId', '==', companyId), where('userId', '==', userId));
     return collectionData(q, { idField: 'id' }).pipe(map((rows: any[]) => rows[0] ?? null)) as any;
+  }
+
+  getMyMembership$(companyId: string): Observable<CompanyMembership | null> {
+    return this.authService.authState$.pipe(
+      switchMap(user => {
+        if (!user) return of(null);
+        const q = query(collection(this.firestore, 'companyMemberships'), where('companyId', '==', companyId), where('userId', '==', user.uid));
+        return collectionData(q, { idField: 'id' }).pipe(map((rows: any[]) => rows[0] ?? null));
+      })
+    );
   }
 
   async createCompany(name: string): Promise<string> {

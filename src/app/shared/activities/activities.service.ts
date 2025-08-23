@@ -2,24 +2,28 @@ import { Injectable, inject } from '@angular/core';
 import { Firestore, addDoc, collection, collectionData, orderBy, query, serverTimestamp, where } from '@angular/fire/firestore';
 import { Observable } from 'rxjs';
 import { ActivityAction, ActivityModule, ActivityRecord, NewActivityRecord } from './activities.interfaces';
+import { CompanyService } from '../company/company.service';
 
 @Injectable({ providedIn: 'root' })
 export class ActivitiesService {
   private readonly firestore = inject(Firestore);
   private readonly collectionRef = collection(this.firestore, 'activities');
+  private readonly company = inject(CompanyService);
 
   async log(record: NewActivityRecord): Promise<void> {
-    await addDoc(this.collectionRef, { ...record, createdAt: serverTimestamp() });
+    await addDoc(this.collectionRef, { companyId: this.company.selectedCompanyId(), ...record, createdAt: serverTimestamp() });
   }
 
   getAll$(): Observable<ActivityRecord[]> {
-    const q = query(this.collectionRef, orderBy('createdAt', 'desc'));
+    const companyId = this.company.selectedCompanyId();
+    const q = companyId ? query(this.collectionRef, where('companyId', '==', companyId), orderBy('createdAt', 'desc')) : query(this.collectionRef, orderBy('createdAt', 'desc'));
     return collectionData(q, { idField: 'id' }) as unknown as Observable<ActivityRecord[]>;
   }
 
   getFiltered$(opts: { module?: ActivityModule | 'all'; userId?: string | 'all'; search?: string }): Observable<ActivityRecord[]> {
-    // Firestore cannot OR search across fields; return all and filter on client for search
-    const whereClauses = [] as any[];
+    const whereClauses: any[] = [];
+    const companyId = this.company.selectedCompanyId();
+    if (companyId) whereClauses.push(where('companyId', '==', companyId));
     if (opts.module && opts.module !== 'all') whereClauses.push(where('module', '==', opts.module));
     if (opts.userId && opts.userId !== 'all') whereClauses.push(where('userId', '==', opts.userId));
     const q = whereClauses.length ? query(this.collectionRef, ...whereClauses, orderBy('createdAt', 'desc')) : query(this.collectionRef, orderBy('createdAt', 'desc'));
