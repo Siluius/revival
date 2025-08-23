@@ -3,6 +3,7 @@ export type PaymentStatus = 'unpaid' | 'partial' | 'paid' | 'cancelled';
 
 export interface Attendant {
   id: string;
+  companyId: string;
   firstName: string;
   lastName: string;
   address?: string | null;

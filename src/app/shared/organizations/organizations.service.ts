@@ -1,15 +1,18 @@
 import { Injectable, inject } from '@angular/core';
-import { Firestore, addDoc, collection, collectionData, doc, docData, orderBy, query, serverTimestamp, updateDoc } from '@angular/fire/firestore';
+import { Firestore, addDoc, collection, collectionData, doc, docData, orderBy, query, serverTimestamp, updateDoc, where } from '@angular/fire/firestore';
 import { Observable, map } from 'rxjs';
 import { Organization, NewOrganization } from './organizations.interfaces';
+import { CompanyService } from '../company/company.service';
 
 @Injectable({ providedIn: 'root' })
 export class OrganizationsService {
   private readonly firestore = inject(Firestore);
+  private readonly company = inject(CompanyService);
   private readonly collectionRef = collection(this.firestore, 'organizations');
 
   getAll$(): Observable<Organization[]> {
-    const q = query(this.collectionRef, orderBy('name'));
+    const companyId = this.company.selectedCompanyId();
+    const q = companyId ? query(this.collectionRef, where('companyId', '==', companyId), orderBy('name')) : query(this.collectionRef, orderBy('name'));
     return collectionData(q, { idField: 'id' }) as Observable<Organization[]>;
   }
 
@@ -20,6 +23,7 @@ export class OrganizationsService {
 
   async create(data: NewOrganization): Promise<string> {
     const result = await addDoc(this.collectionRef, {
+      companyId: this.company.selectedCompanyId(),
       name: data.name,
       description: data.description ?? null,
       createdAt: serverTimestamp(),

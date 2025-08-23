@@ -1,5 +1,6 @@
 export interface AppEvent {
   id: string;
+  companyId: string;
   name: string;
   description?: string | null;
   costUSD?: number | null;

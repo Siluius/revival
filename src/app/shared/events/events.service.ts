@@ -1,19 +1,10 @@
 import { Injectable, inject } from '@angular/core';
-
-export type EventStatus = 'proposal' | 'scheduled' | 'executed';
-
-export type AppEventInput = {
-  name: string;
-  description: string;
-  status: EventStatus;
-  start: Date;
-  end: Date;
-};
-import { Firestore, addDoc, collection, collectionData, doc, docData, orderBy, query, serverTimestamp, updateDoc } from '@angular/fire/firestore';
+import { Firestore, addDoc, collection, collectionData, doc, docData, orderBy, query, serverTimestamp, updateDoc, where } from '@angular/fire/firestore';
 import { Observable, map } from 'rxjs';
 import { AppEvent, NewAppEvent } from './events.interfaces';
 import { ActivitiesService } from '../activities/activities.service';
 import { Auth } from '@angular/fire/auth';
+import { CompanyService } from '../company/company.service';
 
 @Injectable({ providedIn: 'root' })
 export class EventsService {
@@ -21,9 +12,11 @@ export class EventsService {
   private readonly collectionRef = collection(this.firestore, 'events');
   private readonly activities = inject(ActivitiesService);
   private readonly auth = inject(Auth);
+  private readonly company = inject(CompanyService);
 
   getAll$(): Observable<AppEvent[]> {
-    const q = query(this.collectionRef, orderBy('name'));
+    const companyId = this.company.selectedCompanyId();
+    const q = companyId ? query(this.collectionRef, where('companyId', '==', companyId), orderBy('name')) : query(this.collectionRef, orderBy('name'));
     return collectionData(q, { idField: 'id' }) as Observable<AppEvent[]>;
   }
 
@@ -34,6 +27,7 @@ export class EventsService {
 
   async create(data: NewAppEvent): Promise<string> {
     const result = await addDoc(this.collectionRef, {
+      companyId: this.company.selectedCompanyId(),
       name: data.name,
       description: data.description ?? null,
       costUSD: data.costUSD ?? null,
