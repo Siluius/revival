@@ -1,4 +1,5 @@
 import { Component, inject, signal } from '@angular/core';
+import { CommonModule } from '@angular/common';
 import { RouterLink, RouterOutlet } from '@angular/router';
 import { AuthService } from '../shared/auth/auth.service';
 import { ThemeService } from '../shared/theme/theme.service';
@@ -8,6 +9,7 @@ import { MatListModule } from '@angular/material/list';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MatSelectModule } from '@angular/material/select';
+import { MatFormFieldModule } from '@angular/material/form-field';
 import { CompanyService } from '../shared/company/company.service';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { IfAdminDirective } from '../shared/auth/if-can-admin.directive';
@@ -15,7 +17,7 @@ import { IfAdminDirective } from '../shared/auth/if-can-admin.directive';
 @Component({
   selector: 'app-layout',
   standalone: true,
-  imports: [RouterLink, RouterOutlet, MatToolbarModule, MatButtonModule, MatListModule, MatIconModule, MatButtonToggleModule, MatSelectModule, IfAdminDirective],
+  imports: [CommonModule, RouterLink, RouterOutlet, MatToolbarModule, MatButtonModule, MatListModule, MatIconModule, MatButtonToggleModule, MatSelectModule, MatFormFieldModule, IfAdminDirective],
   templateUrl: './app-layout.component.html',
   styleUrls: ['./app-layout.component.scss']
 })
