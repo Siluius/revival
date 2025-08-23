@@ -27,20 +27,19 @@
     <div class="row">
       <mat-form-field appearance="outline" class="w-50">
         <mat-label>Date of Birth</mat-label>
-        <input matInput [matDatepicker]="picker" formControlName="dateOfBirth" />
+        <input matInput [matDatepicker]="picker" formControlName="dateOfBirth" required />
         <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
         <mat-datepicker #picker></mat-datepicker>
+        <mat-error *ngIf="form.get('dateOfBirth')?.invalid">Date of birth is required</mat-error>
       </mat-form-field>
 
       <mat-form-field appearance="outline" class="w-50">
         <mat-label>Gender</mat-label>
-        <mat-select formControlName="gender">
-          <mat-option [value]="null">-</mat-option>
+        <mat-select formControlName="gender" required>
           <mat-option value="male">Male</mat-option>
           <mat-option value="female">Female</mat-option>
-          <mat-option value="other">Other</mat-option>
-          <mat-option value="prefer_not_to_say">Prefer not to say</mat-option>
         </mat-select>
+        <mat-error *ngIf="form.get('gender')?.invalid">Gender is required</mat-error>
       </mat-form-field>
     </div>
 

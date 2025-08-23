@@ -1,4 +1,4 @@
-export type Gender = 'male' | 'female' | 'other' | 'prefer_not_to_say';
+export type Gender = 'male' | 'female';
 export type PaymentStatus = 'unpaid' | 'partial' | 'paid' | 'cancelled';
 
 export interface Attendant {

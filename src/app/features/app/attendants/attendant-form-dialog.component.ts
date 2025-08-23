@@ -39,8 +39,8 @@ export class AttendantFormDialogComponent {
     lastName: ['', [Validators.required]],
     address: [''],
     phone: [''],
-    dateOfBirth: [null as Date | null],
-    gender: [null as Gender | null],
+    dateOfBirth: [null as Date | null, [Validators.required]],
+    gender: [null as Gender | null, [Validators.required]],
     organizationId: [null as string | null]
   });
 
