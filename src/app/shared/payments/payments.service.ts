@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { Firestore, addDoc, collection, collectionData, deleteDoc, doc, docData, orderBy, query, serverTimestamp, updateDoc, where, writeBatch, increment, getDoc } from '@angular/fire/firestore';
+import { Firestore, addDoc, collection, collectionData, deleteDoc, doc, docData, orderBy, query, serverTimestamp, updateDoc, where, writeBatch, increment, getDoc, getDocs } from '@angular/fire/firestore';
 import { Observable, map } from 'rxjs';
 import { NewPayment, Payment } from './payments.interfaces';
 import { ActivitiesService } from '../activities/activities.service';
@@ -53,6 +53,7 @@ export class PaymentsService {
     });
     await this.updateCounters(data.attendantId, data.eventId, amountUSD);
     await this.recalculateAttendantEventStatus(data.attendantId, data.eventId);
+    await this.recalculateOverallAttendantStatus(data.attendantId);
     const user = this.auth.currentUser;
     await this.activities.logEntity('payments', 'create', 'payments', result.id, { uid: user?.uid ?? null, email: user?.email ?? null, displayName: user?.displayName ?? null }, { data, amountUSD, companyId });
     return result.id;
@@ -73,6 +74,7 @@ export class PaymentsService {
     batch.set(counterRef, { companyId: this.company.selectedCompanyId(), attendantId: current.attendantId, eventId: current.eventId, totalUSD: increment(delta) }, { merge: true });
     await batch.commit();
     await this.recalculateAttendantEventStatus(current.attendantId, current.eventId);
+    await this.recalculateOverallAttendantStatus(current.attendantId);
     const user = this.auth.currentUser;
     await this.activities.logEntity('payments', 'update', 'payments', id, { uid: user?.uid ?? null, email: user?.email ?? null, displayName: user?.displayName ?? null }, { previous: current, updated: { amountUSD, originalAmount, originalCurrency } });
   }
@@ -83,6 +85,7 @@ export class PaymentsService {
     await deleteDoc(doc(this.firestore, `payments/${id}`));
     await this.updateCounters(current.attendantId, current.eventId, -current.amountUSD);
     await this.recalculateAttendantEventStatus(current.attendantId, current.eventId);
+    await this.recalculateOverallAttendantStatus(current.attendantId);
     const user = this.auth.currentUser;
     await this.activities.logEntity('payments', 'delete', 'payments', id, { uid: user?.uid ?? null, email: user?.email ?? null, displayName: user?.displayName ?? null }, { previous: current });
   }
@@ -112,11 +115,43 @@ export class PaymentsService {
     const costUSD = (eventSnap.exists() ? (eventSnap.data() as any)?.costUSD : null) as number | null;
     let status: 'unpaid' | 'partial' | 'paid' | 'cancelled' = 'unpaid';
     if (costUSD && costUSD > 0) {
-      status = totalUSD >= costUSD ? 'cancelled' : totalUSD > 0 ? 'partial' : 'unpaid';
+      status = totalUSD >= costUSD ? 'paid' : totalUSD > 0 ? 'partial' : 'unpaid';
     } else {
-      status = totalUSD > 0 ? 'partial' : 'unpaid';
+      // No cost -> consider as paid (no payment required)
+      status = 'paid';
     }
     const attRef = doc(this.firestore, `attendants/${attendantId}`);
     await updateDoc(attRef, { [`eventPayments.${eventId}`]: { totalUSD, status } });
+  }
+
+  private async recalculateOverallAttendantStatus(attendantId: string): Promise<void> {
+    const companyId = this.company.selectedCompanyId();
+    const eventsSnap = await getDocs(query(collection(this.firestore, 'events'), ...(companyId ? [where('companyId', '==', companyId)] as any : [])) as any);
+    const events: Array<{ id: string; costUSD: number | null }> = eventsSnap.docs.map(d => ({ id: d.id, costUSD: (d.data() as any)?.costUSD ?? null }));
+
+    const attRef = doc(this.firestore, `attendants/${attendantId}`);
+    const attSnap = await getDoc(attRef);
+    const eventPayments = (attSnap.exists() ? (attSnap.data() as any)?.eventPayments : {}) as Record<string, { totalUSD: number; status: 'unpaid' | 'partial' | 'paid' | 'cancelled' } | undefined>;
+
+    let anyPartial = false;
+    let allPaid = true;
+
+    for (const evt of events) {
+      const ep = eventPayments?.[evt.id];
+      if (evt.costUSD && evt.costUSD > 0) {
+        const st = ep?.status ?? 'unpaid';
+        if (st === 'partial') anyPartial = true;
+        if (st !== 'paid') allPaid = false;
+      } else {
+        // zero/no cost → treat as paid
+      }
+    }
+
+    let overall: 'unpaid' | 'partial' | 'paid' = 'unpaid';
+    if (allPaid) overall = 'paid';
+    else if (anyPartial) overall = 'partial';
+    else overall = 'unpaid';
+
+    await updateDoc(attRef, { paymentStatus: overall, updatedAt: serverTimestamp() });
   }
 }
