@@ -7,6 +7,7 @@ export interface Attendant {
   firstName: string;
   lastName: string;
   address?: string | null;
+  phone?: string | null;
   dateOfBirth?: Date | null; // stored as Firestore Timestamp/Date
   gender?: Gender | null;
   organizationId?: string | null;
@@ -17,4 +18,4 @@ export interface Attendant {
   updatedAt?: unknown;
 }
 
-export type NewAttendant = Pick<Attendant, 'firstName' | 'lastName' | 'address' | 'dateOfBirth' | 'gender' | 'organizationId'>;
+export type NewAttendant = Pick<Attendant, 'firstName' | 'lastName' | 'address' | 'phone' | 'dateOfBirth' | 'gender' | 'organizationId'>;

@@ -38,6 +38,7 @@ export class AttendantFormDialogComponent {
     firstName: ['', [Validators.required]],
     lastName: ['', [Validators.required]],
     address: [''],
+    phone: [''],
     dateOfBirth: [null as Date | null],
     gender: [null as Gender | null],
     organizationId: [null as string | null]
@@ -49,6 +50,7 @@ export class AttendantFormDialogComponent {
         firstName: this.data.firstName,
         lastName: this.data.lastName,
         address: this.data.address ?? '',
+        phone: this.data.phone ?? '',
         dateOfBirth: this.data.dateOfBirth ? new Date(this.data.dateOfBirth) : null,
         gender: this.data.gender ?? null,
         organizationId: this.data.organizationId ?? null
@@ -64,6 +66,7 @@ export class AttendantFormDialogComponent {
         firstName: value.firstName!,
         lastName: value.lastName!,
         address: value.address ?? '',
+        phone: value.phone ?? '',
         dateOfBirth: value.dateOfBirth ?? null,
         gender: value.gender ?? null,
         organizationId: value.organizationId ?? null
