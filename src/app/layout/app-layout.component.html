@@ -40,12 +40,6 @@
     <span>Revival</span>
     <span class="spacer"></span>
     <a mat-button routerLink="/company">Manage Companies</a>
-    <mat-form-field appearance="outline" style="min-width: 220px; margin-right: 12px;">
-      <mat-label>Company</mat-label>
-      <mat-select [value]="companyId()" (selectionChange)="setCompany($event.value)">
-        <mat-option *ngFor="let c of myCompanies()" [value]="c.id">{{ c.name }}</mat-option>
-      </mat-select>
-    </mat-form-field>
     <mat-button-toggle-group [value]="theme()" (change)="setTheme($event.value)">
       <mat-button-toggle value="theme-light">Light</mat-button-toggle>
       <mat-button-toggle value="theme-dark">Dark</mat-button-toggle>

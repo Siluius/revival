@@ -8,14 +8,13 @@
 .sidenav .mat-mdc-list-item { padding: 10px 12px 10px 16px; border-radius: 0 24px 24px 0; margin-right: 8px; gap: 12px; align-items: center; }
 .sidenav a[mat-list-item] { color: inherit; display: inline-flex; align-items: center; line-height: 24px; height: 44px; }
 .sidenav a[mat-list-item] mat-icon { color: inherit; margin-left: 4px; font-size: 20px; height: 20px; width: 20px; display: inline-flex; align-items: center; justify-content: center; }
-.sidenav a[mat-list-item] .label { white-space: nowrap; display: inline-flex; align-items: center; height: 24px; }
+.sidenav a[mat-list-item] .label { white-space: nowrap; display: inline-flex; align-items: center; height: 24px; margin-left: 8px; }
 /* Ensure MDC internal content aligns center */
 .sidenav .mdc-list-item__content { display: inline-flex; align-items: center; gap: 12px; width: 100%; }
 
 .layout.collapsed .sidenav .mat-mdc-list-item { justify-content: center; gap: 0; }
 .layout.collapsed .sidenav a[mat-list-item] .label { display: none; }
-.layout.collapsed .sidenav a[mat-list-item] { justify-content: center; padding-left: 0; padding-right: 0; width: 100%; }
-.layout.collapsed .sidenav a[mat-list-item] mat-icon { margin-left: 0; }
+.layout.collapsed .sidenav a[mat-list-item] { justify-content: center; width: 100%; }
 
 /* Theme-specific sidenav backgrounds */
 :host-context(.theme-light) .sidenav { background: #fff; border-right-color: #e0e0e0; }
