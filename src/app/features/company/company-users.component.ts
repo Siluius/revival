@@ -11,6 +11,7 @@ import { IfAdminDirective } from '../../shared/auth/if-can-admin.directive';
 import { MatSort, MatSortModule, Sort } from '@angular/material/sort';
 import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
 import { Firestore, doc, docData } from '@angular/fire/firestore';
+import { combineLatest, map, of, switchMap } from 'rxjs';
 
 interface MembershipRow { userId: string; role: 'viewer' | 'editor' | 'admin'; email?: string | null; name?: string | null; }
 
@@ -31,17 +32,25 @@ export class CompanyUsersComponent {
   protected readonly inviteEmail = signal('');
   protected readonly sortState = signal<Sort>({ active: 'email', direction: 'asc' });
 
-  protected readonly rows = toSignal(this.mapRows(), { initialValue: [] as MembershipRow[] });
-
-  private mapRows() {
-    return docData(doc(this.firestore, '__noop__/__noop__')).pipe() as any;
-  }
+  protected readonly rows = toSignal(
+    this.company.getMembershipsForCurrentCompany$().pipe(
+      switchMap((ms: any[]) => {
+        if (!ms || ms.length === 0) return of([] as MembershipRow[]);
+        const streams = ms.map(m =>
+          docData(doc(this.firestore, `users/${m.userId}`)).pipe(
+            map((u: any) => ({ userId: m.userId, role: m.role, email: u?.email ?? null, name: u?.displayName ?? null }))
+          )
+        );
+        return combineLatest(streams);
+      })
+    ),
+    { initialValue: [] as MembershipRow[] }
+  );
 
   get data(): MembershipRow[] {
-    const base = (this.memberships() || []) as Array<{ userId: string; role: any; email?: string | null; name?: string | null }>;
-    const withFields: MembershipRow[] = base.map(m => ({ userId: m.userId, role: m.role, email: (m as any).email ?? null, name: (m as any).name ?? null }));
+    const base = this.rows();
     const s = this.sortState();
-    const sorted = [...withFields].sort((a, b) => {
+    const sorted = [...base].sort((a, b) => {
       const dir = s.direction === 'desc' ? -1 : 1;
       const pick = (row: MembershipRow) => (s.active === 'userId' ? row.userId : s.active === 'role' ? row.role : s.active === 'name' ? (row.name ?? '') : (row.email ?? ''));
       return String(pick(a)).localeCompare(String(pick(b))) * dir;
