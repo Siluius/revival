@@ -33,7 +33,6 @@
     "@angular/router": "^20.2.0",
     "ag-grid-angular": "^34.1.2",
     "ag-grid-community": "^34.1.2",
-    "ag-grid-enterprise": "^34.1.2",
     "firebase": "^11.10.0",
     "highcharts": "^12.3.0",
     "highcharts-angular": "^5.1.0",

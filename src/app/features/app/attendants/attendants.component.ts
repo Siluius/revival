@@ -1,4 +1,4 @@
-import { Component, computed, effect, inject, signal } from '@angular/core';
+import { Component, effect, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
@@ -19,7 +19,6 @@ import { AppEvent } from '../../../shared/events/events.interfaces';
 import { PaymentFormDialogComponent } from '../../payments/payment-form-dialog.component';
 import { AgGridModule } from 'ag-grid-angular';
 import { ColDef, GridApi, GridOptions, ICellRendererParams } from 'ag-grid-community';
-import 'ag-grid-enterprise';
 
 @Component({
   selector: 'app-attendants',
@@ -45,14 +44,12 @@ export class AttendantsComponent {
   protected readonly organizations = toSignal(this.orgService.getAll$(), { initialValue: [] as Organization[] });
   protected readonly events = toSignal(this.eventsService.getAll$(), { initialValue: [] as AppEvent[] });
 
+  protected readonly rowData = computed(() => this.applyClientFiltersAndSort(this.allAttendants()));
+
   constructor() {
     effect(() => {
       if (!this.gridApi) return;
       this.gridApi.setGridOption('quickFilterText', this.search());
-    });
-    effect(() => {
-      if (!this.gridApi) return;
-      this.setServerSideDatasource();
     });
   }
 
@@ -75,36 +72,18 @@ export class AttendantsComponent {
   ];
 
   protected readonly gridOptions: GridOptions = {
-    rowModelType: 'serverSide',
-    cacheBlockSize: 50,
-    maxBlocksInCache: 10,
+    rowModelType: 'clientSide',
+    pagination: true,
+    paginationPageSize: 10,
     suppressCellFocus: true,
     animateRows: true,
-    defaultColDef: { sortable: true, filter: true, resizable: true },
-    sideBar: { toolPanels: ['columns', 'filters'] }
+    defaultColDef: { sortable: true, filter: true, resizable: true }
   } as GridOptions;
 
   onGridReady = (event: any) => {
     this.gridApi = event.api as GridApi;
-    this.setServerSideDatasource();
     this.gridApi.setGridOption('quickFilterText', this.search());
   };
-
-  private setServerSideDatasource(): void {
-    if (!this.gridApi) return;
-    const datasource = {
-      getRows: (params: any) => {
-        const request = params.request;
-        const start = request.startRow;
-        const end = request.endRow;
-        const all = this.applyClientFiltersAndSort(this.allAttendants());
-        const rowsThisPage = all.slice(start, Math.min(end, all.length));
-        const lastRow = end >= all.length ? all.length : -1;
-        setTimeout(() => params.success({ rowData: rowsThisPage, rowCount: all.length, storeInfo: { lastRow } }), 0);
-      }
-    };
-    this.gridApi.setGridOption('serverSideDatasource', datasource as any);
-  }
 
   private applyClientFiltersAndSort(rows: Attendant[]): Attendant[] {
     const term = this.search().toLowerCase().trim();
