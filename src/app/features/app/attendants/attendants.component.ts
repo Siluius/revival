@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, effect, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
@@ -18,7 +18,8 @@ import { EventsService } from '../../../shared/events/events.service';
 import { AppEvent } from '../../../shared/events/events.interfaces';
 import { PaymentFormDialogComponent } from '../../payments/payment-form-dialog.component';
 import { AgGridModule } from 'ag-grid-angular';
-import { ColDef, ICellRendererParams } from 'ag-grid-community';
+import { ColDef, GridApi, GridOptions, ICellRendererParams } from 'ag-grid-community';
+import 'ag-grid-enterprise';
 
 @Component({
   selector: 'app-attendants',
@@ -32,6 +33,8 @@ export class AttendantsComponent {
   private readonly eventsService = inject(EventsService);
   private readonly dialog = inject(MatDialog);
 
+  protected gridApi?: GridApi;
+
   protected readonly search = signal('');
   protected readonly paymentStatus = signal<PaymentStatus | 'all'>('all');
   protected readonly gender = signal<Gender | 'all'>('all');
@@ -42,21 +45,16 @@ export class AttendantsComponent {
   protected readonly organizations = toSignal(this.orgService.getAll$(), { initialValue: [] as Organization[] });
   protected readonly events = toSignal(this.eventsService.getAll$(), { initialValue: [] as AppEvent[] });
 
-  protected readonly rowData = computed(() => {
-    const term = this.search().toLowerCase().trim();
-    const gender = this.gender();
-    const payment = this.paymentStatus();
-    const orgId = this.organizationId();
-    const evtId = this.eventId();
-    return this.allAttendants().filter(a => {
-      const matchesTerm = !term || `${a.firstName} ${a.lastName}`.toLowerCase().includes(term) || (a.address ?? '').toLowerCase().includes(term);
-      const matchesGender = gender === 'all' || a.gender === gender;
-      const matchesOrg = orgId === 'all' || a.organizationId === orgId;
-      const effectiveStatus: PaymentStatus | null = evtId === 'all' ? (a.paymentStatus ?? null) : (a.eventPayments?.[evtId]?.status ?? null);
-      const matchesPayment = payment === 'all' || effectiveStatus === payment;
-      return matchesTerm && matchesGender && matchesPayment && matchesOrg;
+  constructor() {
+    effect(() => {
+      if (!this.gridApi) return;
+      this.gridApi.setGridOption('quickFilterText', this.search());
     });
-  });
+    effect(() => {
+      if (!this.gridApi) return;
+      this.setServerSideDatasource();
+    });
+  }
 
   protected readonly columnDefs: ColDef[] = [
     { field: 'firstName', headerName: 'First Name', sortable: true, filter: true, flex: 1 },
@@ -75,6 +73,55 @@ export class AttendantsComponent {
         e.appendChild(editBtn); e.appendChild(payBtn); e.appendChild(viewA); return e;
       }, width: 280 }
   ];
+
+  protected readonly gridOptions: GridOptions = {
+    rowModelType: 'serverSide',
+    cacheBlockSize: 50,
+    maxBlocksInCache: 10,
+    suppressCellFocus: true,
+    animateRows: true,
+    defaultColDef: { sortable: true, filter: true, resizable: true },
+    sideBar: { toolPanels: ['columns', 'filters'] }
+  } as GridOptions;
+
+  onGridReady = (event: any) => {
+    this.gridApi = event.api as GridApi;
+    this.setServerSideDatasource();
+    this.gridApi.setGridOption('quickFilterText', this.search());
+  };
+
+  private setServerSideDatasource(): void {
+    if (!this.gridApi) return;
+    const datasource = {
+      getRows: (params: any) => {
+        const request = params.request;
+        const start = request.startRow;
+        const end = request.endRow;
+        const all = this.applyClientFiltersAndSort(this.allAttendants());
+        const rowsThisPage = all.slice(start, Math.min(end, all.length));
+        const lastRow = end >= all.length ? all.length : -1;
+        setTimeout(() => params.success({ rowData: rowsThisPage, rowCount: all.length, storeInfo: { lastRow } }), 0);
+      }
+    };
+    this.gridApi.setGridOption('serverSideDatasource', datasource as any);
+  }
+
+  private applyClientFiltersAndSort(rows: Attendant[]): Attendant[] {
+    const term = this.search().toLowerCase().trim();
+    const gender = this.gender();
+    const payment = this.paymentStatus();
+    const orgId = this.organizationId();
+    const evtId = this.eventId();
+    const filtered = rows.filter(a => {
+      const matchesTerm = !term || `${a.firstName} ${a.lastName}`.toLowerCase().includes(term) || (a.address ?? '').toLowerCase().includes(term);
+      const matchesGender = gender === 'all' || a.gender === gender;
+      const matchesOrg = orgId === 'all' || a.organizationId === orgId;
+      const effectiveStatus: PaymentStatus | null = evtId === 'all' ? (a.paymentStatus ?? null) : (a.eventPayments?.[evtId]?.status ?? null);
+      const matchesPayment = payment === 'all' || effectiveStatus === payment;
+      return matchesTerm && matchesGender && matchesPayment && matchesOrg;
+    });
+    return filtered.sort((a, b) => `${a.lastName} ${a.firstName}`.localeCompare(`${b.lastName} ${b.firstName}`));
+  }
 
   overallTotalUSD(a: Attendant): number {
     const map = a.eventPayments || {};

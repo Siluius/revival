@@ -39,5 +39,5 @@
 </div>
 
 <div class="ag-theme-quartz" style="height: calc(100vh - 260px); width: 100%;">
-  <ag-grid-angular [rowData]="rowData()" [columnDefs]="columnDefs" [pagination]="true" [paginationPageSize]="10" [rowSelection]="'single'" [suppressCellFocus]="true" [animateRows]="true"></ag-grid-angular>
+  <ag-grid-angular [gridOptions]="gridOptions" [columnDefs]="columnDefs" (gridReady)="onGridReady($event)"></ag-grid-angular>
 </div>
