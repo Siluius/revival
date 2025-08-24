@@ -6,24 +6,22 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSelectModule } from '@angular/material/select';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
-import { RouterLink } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { AttendantsService } from '../../../shared/attendants/attendants.service';
 import { Attendant, PaymentStatus, Gender } from '../../../shared/attendants/attendants.interfaces';
 import { OrganizationsService } from '../../../shared/organizations/organizations.service';
 import { Organization } from '../../../shared/organizations/organizations.interfaces';
 import { AttendantFormDialogComponent } from './attendant-form-dialog.component';
-import { FindByIdPipe } from '../../../shared/utils/find-by-id.pipe';
 import { EventsService } from '../../../shared/events/events.service';
 import { AppEvent } from '../../../shared/events/events.interfaces';
 import { PaymentFormDialogComponent } from '../../payments/payment-form-dialog.component';
 import { AgGridModule } from 'ag-grid-angular';
-import { ColDef, GridApi, GridOptions, ICellRendererParams } from 'ag-grid-community';
+import { ColDef, GridApi, GridOptions, ICellRendererParams, themeQuartz } from 'ag-grid-community';
 
 @Component({
   selector: 'app-attendants',
   standalone: true,
-  imports: [CommonModule, RouterLink, MatFormFieldModule, MatInputModule, MatButtonModule, MatIconModule, MatSelectModule, MatDialogModule, FindByIdPipe, AgGridModule],
+  imports: [CommonModule, MatFormFieldModule, MatInputModule, MatButtonModule, MatIconModule, MatSelectModule, MatDialogModule, AgGridModule],
   templateUrl: './attendants.component.html'
 })
 export class AttendantsComponent {
@@ -33,6 +31,7 @@ export class AttendantsComponent {
   private readonly dialog = inject(MatDialog);
 
   protected gridApi?: GridApi;
+  protected readonly theme = themeQuartz;
 
   protected readonly search = signal('');
   protected readonly paymentStatus = signal<PaymentStatus | 'all'>('all');
@@ -73,6 +72,7 @@ export class AttendantsComponent {
 
   protected readonly gridOptions: GridOptions = {
     rowModelType: 'clientSide',
+    theme: themeQuartz,
     pagination: true,
     paginationPageSize: 10,
     suppressCellFocus: true,
