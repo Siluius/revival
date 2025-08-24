@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, ViewChild, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { MatTableModule } from '@angular/material/table';
@@ -12,11 +12,13 @@ import { AppEvent } from '../../../shared/events/events.interfaces';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { PaymentFormDialogComponent } from '../../payments/payment-form-dialog.component';
 import { LoadingService } from '../../../shared/loading/loading.service';
+import { MatSort, MatSortModule, Sort } from '@angular/material/sort';
+import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
 
 @Component({
   selector: 'app-attendants-payments',
   standalone: true,
-  imports: [CommonModule, RouterLink, MatTableModule, MatButtonModule, MatIconModule, MatDialogModule],
+  imports: [CommonModule, RouterLink, MatTableModule, MatButtonModule, MatIconModule, MatDialogModule, MatSortModule, MatPaginatorModule],
   templateUrl: './attendants-payments.component.html'
 })
 export class AttendantsPaymentsComponent {
@@ -26,9 +28,44 @@ export class AttendantsPaymentsComponent {
   private readonly dialog = inject(MatDialog);
   private readonly loading = inject(LoadingService);
 
+  @ViewChild(MatSort) sort?: MatSort;
+  @ViewChild(MatPaginator) paginator?: MatPaginator;
+
   protected readonly attendantId = this.route.snapshot.paramMap.get('attendantId') as string;
   protected readonly eventsList = toSignal(this.events.getAll$(), { initialValue: [] as AppEvent[] });
   protected readonly paymentsList = toSignal(this.payments.getByAttendant$(this.attendantId), { initialValue: [] as Payment[] });
+
+  protected readonly sortState = signal<Sort>({ active: 'date', direction: 'desc' });
+
+  protected get data(): Payment[] {
+    const list = this.paymentsList();
+    const s: Sort = this.sortState();
+    const sorted = [...list].sort((a, b) => {
+      const dir = s.direction === 'desc' ? -1 : 1;
+      const av = ((): any => {
+        switch (s.active) {
+          case 'date': return (a.createdAt as any) ?? 0;
+          case 'event': return this.eventName(a.eventId);
+          case 'amountUSD': return a.amountUSD;
+          default: return (a.createdAt as any) ?? 0;
+        }
+      })();
+      const bv = ((): any => {
+        switch (s.active) {
+          case 'date': return (b.createdAt as any) ?? 0;
+          case 'event': return this.eventName(b.eventId);
+          case 'amountUSD': return b.amountUSD;
+          default: return (b.createdAt as any) ?? 0;
+        }
+      })();
+      if (typeof av === 'number' && typeof bv === 'number') return (av - bv) * dir;
+      return String(av).localeCompare(String(bv)) * dir;
+    });
+    const pageIndex = this.paginator?.pageIndex ?? 0;
+    const pageSize = this.paginator?.pageSize ?? sorted.length;
+    const start = pageIndex * pageSize;
+    return sorted.slice(start, start + pageSize);
+  }
 
   protected readonly displayedColumns = ['date', 'event', 'amountUSD', 'original', 'actions'] as const;
 
