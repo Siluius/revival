@@ -1,7 +1,6 @@
-import { Component, inject, ViewChild, signal } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
-import { MatTableModule } from '@angular/material/table';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { toSignal } from '@angular/core/rxjs-interop';
@@ -12,13 +11,15 @@ import { AppEvent } from '../../../shared/events/events.interfaces';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { PaymentFormDialogComponent } from '../../payments/payment-form-dialog.component';
 import { LoadingService } from '../../../shared/loading/loading.service';
-import { MatSort, MatSortModule, Sort } from '@angular/material/sort';
-import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
+import { AgGridModule } from 'ag-grid-angular';
+import { ColDef, GridApi, GridOptions, ICellRendererParams, ModuleRegistry, AllCommunityModule, themeQuartz } from 'ag-grid-community';
+
+ModuleRegistry.registerModules([AllCommunityModule]);
 
 @Component({
   selector: 'app-attendants-payments',
   standalone: true,
-  imports: [CommonModule, RouterLink, MatTableModule, MatButtonModule, MatIconModule, MatDialogModule, MatSortModule, MatPaginatorModule],
+  imports: [CommonModule, RouterLink, MatButtonModule, MatIconModule, MatDialogModule, AgGridModule],
   templateUrl: './attendants-payments.component.html'
 })
 export class AttendantsPaymentsComponent {
@@ -28,50 +29,46 @@ export class AttendantsPaymentsComponent {
   private readonly dialog = inject(MatDialog);
   private readonly loading = inject(LoadingService);
 
-  @ViewChild(MatSort) sort?: MatSort;
-  @ViewChild(MatPaginator) paginator?: MatPaginator;
+  protected gridApi?: GridApi;
+  protected readonly theme = themeQuartz;
 
   protected readonly attendantId = this.route.snapshot.paramMap.get('attendantId') as string;
   protected readonly eventsList = toSignal(this.events.getAll$(), { initialValue: [] as AppEvent[] });
   protected readonly paymentsList = toSignal(this.payments.getByAttendant$(this.attendantId), { initialValue: [] as Payment[] });
 
-  protected readonly sortState = signal<Sort>({ active: 'date', direction: 'desc' });
+  protected readonly rowData = this.paymentsList;
 
-  protected get data(): Payment[] {
-    const list = this.paymentsList();
-    const s: Sort = this.sortState();
-    const sorted = [...list].sort((a, b) => {
-      const dir = s.direction === 'desc' ? -1 : 1;
-      const av = ((): any => {
-        switch (s.active) {
-          case 'date': return (a.createdAt as any) ?? 0;
-          case 'event': return this.eventName(a.eventId);
-          case 'amountUSD': return a.amountUSD;
-          default: return (a.createdAt as any) ?? 0;
-        }
-      })();
-      const bv = ((): any => {
-        switch (s.active) {
-          case 'date': return (b.createdAt as any) ?? 0;
-          case 'event': return this.eventName(b.eventId);
-          case 'amountUSD': return b.amountUSD;
-          default: return (b.createdAt as any) ?? 0;
-        }
-      })();
-      if (typeof av === 'number' && typeof bv === 'number') return (av - bv) * dir;
-      return String(av).localeCompare(String(bv)) * dir;
-    });
-    const pageIndex = this.paginator?.pageIndex ?? 0;
-    const pageSize = this.paginator?.pageSize ?? sorted.length;
-    const start = pageIndex * pageSize;
-    return sorted.slice(start, start + pageSize);
-  }
+  protected readonly columnDefs: ColDef[] = [
+    { field: 'createdAt', headerName: 'Date', valueFormatter: p => {
+        const v: any = p.value; const d = (v?.toDate?.() ?? v) as Date | undefined; return d ? new Date(d).toLocaleString() : '';
+      }, sort: 'desc', comparator: (a: any, b: any) => new Date(a).getTime() - new Date(b).getTime(), width: 180 },
+    { headerName: 'Event', valueGetter: p => this.eventName(p.data.eventId), flex: 1 },
+    { field: 'amountUSD', headerName: 'Amount (USD)', filter: 'agNumberColumnFilter', valueFormatter: p => (p.value ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }), width: 160 },
+    { headerName: 'Original', valueGetter: p => {
+        const c = p.data.originalCurrency; const a = p.data.originalAmount; if (!c) return '-';
+        return c === 'NIO' ? `${a} NIO` : `${(a ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD`;
+      } },
+    { headerName: 'Actions', cellRenderer: (params: ICellRendererParams) => {
+        const container = document.createElement('div');
+        const edit = document.createElement('button'); edit.textContent = 'Edit'; edit.className = 'mat-mdc-button'; edit.onclick = () => this.editPayment(params.data as Payment);
+        const del = document.createElement('button'); del.textContent = 'Delete'; del.className = 'mat-mdc-button'; del.onclick = () => this.deletePayment(params.data as Payment);
+        container.appendChild(edit); container.appendChild(del); return container;
+      }, width: 200 }
+  ];
 
-  protected readonly displayedColumns = ['date', 'event', 'amountUSD', 'original', 'actions'] as const;
+  protected readonly gridOptions: GridOptions = {
+    rowModelType: 'clientSide',
+    theme: themeQuartz,
+    pagination: true,
+    paginationPageSize: 10,
+    suppressCellFocus: true,
+    animateRows: true,
+    defaultColDef: { sortable: true, filter: true, resizable: true }
+  } as GridOptions;
 
-  eventName(eventId: string): string {
-    return this.eventsList().find(e => e.id === eventId)?.name ?? '-';
-  }
+  onGridReady(event: any) { this.gridApi = event.api as GridApi; }
+
+  eventName(eventId: string): string { return this.eventsList().find(e => e.id === eventId)?.name ?? '-'; }
 
   addPayment(): void {
     const id = this.attendantId; if (!id) return;
@@ -84,8 +81,6 @@ export class AttendantsPaymentsComponent {
   }
 
   async deletePayment(row: Payment): Promise<void> {
-    await this.loading.wrap(async () => {
-      await this.payments.delete(row.id);
-    });
+    await this.loading.wrap(async () => { await this.payments.delete(row.id); });
   }
 }

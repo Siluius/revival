@@ -10,47 +10,4 @@
   </button>
 </div>
 
-<table mat-table [dataSource]="data" matSort (matSortChange)="sortState.set($event)" class="mat-elevation-z1">
-  <ng-container matColumnDef="date">
-    <th mat-header-cell *matHeaderCellDef mat-sort-header>Date</th>
-    <td mat-cell *matCellDef="let row">{{ row.createdAt?.toDate?.() || row.createdAt | date: 'short' }}</td>
-  </ng-container>
-
-  <ng-container matColumnDef="event">
-    <th mat-header-cell *matHeaderCellDef mat-sort-header>Event</th>
-    <td mat-cell *matCellDef="let row">{{ eventName(row.eventId) }}</td>
-  </ng-container>
-
-  <ng-container matColumnDef="amountUSD">
-    <th mat-header-cell *matHeaderCellDef mat-sort-header>Amount (USD)</th>
-    <td mat-cell *matCellDef="let row">{{ row.amountUSD | number: '1.2-2' }}</td>
-  </ng-container>
-
-  <ng-container matColumnDef="original">
-    <th mat-header-cell *matHeaderCellDef>Original</th>
-    <td mat-cell *matCellDef="let row">
-      <ng-container *ngIf="row.originalCurrency === 'NIO'">{{ row.originalAmount }} NIO</ng-container>
-      <ng-container *ngIf="row.originalCurrency === 'USD'">{{ row.originalAmount | number: '1.2-2' }} USD</ng-container>
-      <ng-container *ngIf="!row.originalCurrency">-</ng-container>
-    </td>
-  </ng-container>
-
-  <ng-container matColumnDef="actions">
-    <th mat-header-cell *matHeaderCellDef>Actions</th>
-    <td mat-cell *matCellDef="let row">
-      <button mat-button (click)="editPayment(row)">
-        <mat-icon>edit</mat-icon>
-        Edit
-      </button>
-      <button mat-button color="warn" (click)="deletePayment(row)">
-        <mat-icon>delete</mat-icon>
-        Delete
-      </button>
-    </td>
-  </ng-container>
-
-  <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-  <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
-</table>
-
-<mat-paginator [length]="paymentsList().length" [pageSize]="10" [pageSizeOptions]="[5,10,25,50]"></mat-paginator>
+<ag-grid-angular style="height: calc(100vh - 260px); width: 100%;" [gridOptions]="gridOptions" [columnDefs]="columnDefs" [rowData]="rowData()" [theme]="theme"></ag-grid-angular>
