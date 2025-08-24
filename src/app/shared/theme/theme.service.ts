@@ -13,6 +13,9 @@ export class ThemeService {
       const current = this.theme();
       document.body.classList.remove('theme-light', 'theme-dark');
       document.body.classList.add(current);
+      // Keep AG Grid in sync with app theme per theme modes
+      // https://www.ag-grid.com/angular-data-grid/theming-colors/#colour-schemes
+      document.body.setAttribute('data-ag-theme-mode', current === 'theme-dark' ? 'dark' : 'light');
       localStorage.setItem('app-theme', current);
     });
   }
