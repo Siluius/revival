@@ -1,6 +1,5 @@
-import { Component, computed, inject, signal, ViewChild } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { MatTableModule } from '@angular/material/table';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
@@ -18,13 +17,13 @@ import { FindByIdPipe } from '../../../shared/utils/find-by-id.pipe';
 import { EventsService } from '../../../shared/events/events.service';
 import { AppEvent } from '../../../shared/events/events.interfaces';
 import { PaymentFormDialogComponent } from '../../payments/payment-form-dialog.component';
-import { MatSort, MatSortModule, Sort } from '@angular/material/sort';
-import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
+import { AgGridModule } from 'ag-grid-angular';
+import { ColDef, ICellRendererParams } from 'ag-grid-community';
 
 @Component({
   selector: 'app-attendants',
   standalone: true,
-  imports: [CommonModule, RouterLink, MatTableModule, MatFormFieldModule, MatInputModule, MatButtonModule, MatIconModule, MatSelectModule, MatDialogModule, FindByIdPipe, MatSortModule, MatPaginatorModule],
+  imports: [CommonModule, RouterLink, MatFormFieldModule, MatInputModule, MatButtonModule, MatIconModule, MatSelectModule, MatDialogModule, FindByIdPipe, AgGridModule],
   templateUrl: './attendants.component.html'
 })
 export class AttendantsComponent {
@@ -32,9 +31,6 @@ export class AttendantsComponent {
   private readonly orgService = inject(OrganizationsService);
   private readonly eventsService = inject(EventsService);
   private readonly dialog = inject(MatDialog);
-
-  @ViewChild(MatSort) sort?: MatSort;
-  @ViewChild(MatPaginator) paginator?: MatPaginator;
 
   protected readonly search = signal('');
   protected readonly paymentStatus = signal<PaymentStatus | 'all'>('all');
@@ -46,15 +42,13 @@ export class AttendantsComponent {
   protected readonly organizations = toSignal(this.orgService.getAll$(), { initialValue: [] as Organization[] });
   protected readonly events = toSignal(this.eventsService.getAll$(), { initialValue: [] as AppEvent[] });
 
-  protected readonly sortState = signal<Sort>({ active: 'lastName', direction: 'asc' });
-
-  protected readonly filtered = computed(() => {
+  protected readonly rowData = computed(() => {
     const term = this.search().toLowerCase().trim();
     const gender = this.gender();
     const payment = this.paymentStatus();
     const orgId = this.organizationId();
     const evtId = this.eventId();
-    const list = this.allAttendants().filter(a => {
+    return this.allAttendants().filter(a => {
       const matchesTerm = !term || `${a.firstName} ${a.lastName}`.toLowerCase().includes(term) || (a.address ?? '').toLowerCase().includes(term);
       const matchesGender = gender === 'all' || a.gender === gender;
       const matchesOrg = orgId === 'all' || a.organizationId === orgId;
@@ -62,41 +56,25 @@ export class AttendantsComponent {
       const matchesPayment = payment === 'all' || effectiveStatus === payment;
       return matchesTerm && matchesGender && matchesPayment && matchesOrg;
     });
-    const s = this.sortState();
-    const sorted = [...list].sort((a, b) => {
-      const dir = s.direction === 'desc' ? -1 : 1;
-      const aVal = ((): any => {
-        switch (s.active) {
-          case 'name': return `${a.lastName} ${a.firstName}`;
-          case 'gender': return a.gender ?? '';
-          case 'age': return this.age(a) ?? -1;
-          case 'organization': return (this.organizations().find(o => o.id === a.organizationId)?.name ?? '');
-          case 'paymentStatus': return a.paymentStatus ?? '';
-          default: return `${a.lastName} ${a.firstName}`;
-        }
-      })();
-      const bVal = ((): any => {
-        switch (s.active) {
-          case 'name': return `${b.lastName} ${b.firstName}`;
-          case 'gender': return b.gender ?? '';
-          case 'age': return this.age(b) ?? -1;
-          case 'organization': return (this.organizations().find(o => o.id === b.organizationId)?.name ?? '');
-          case 'paymentStatus': return b.paymentStatus ?? '';
-          default: return `${b.lastName} ${b.firstName}`;
-        }
-      })();
-      if (typeof aVal === 'number' && typeof bVal === 'number') return (aVal - bVal) * dir;
-      return String(aVal).localeCompare(String(bVal)) * dir;
-    });
-    const pageIndex = this.paginator?.pageIndex ?? 0;
-    const pageSize = this.paginator?.pageSize ?? sorted.length;
-    const start = pageIndex * pageSize;
-    return sorted.slice(start, start + pageSize);
   });
 
-  protected readonly displayedColumns = ['name', 'gender', 'age', 'organization', 'paymentStatus', 'payments', 'actions'] as const;
-
-  trackById(_index: number, item: Attendant): string { return item.id; }
+  protected readonly columnDefs: ColDef[] = [
+    { field: 'firstName', headerName: 'First Name', sortable: true, filter: true, flex: 1 },
+    { field: 'lastName', headerName: 'Last Name', sortable: true, filter: true, flex: 1 },
+    { field: 'gender', headerName: 'Gender', sortable: true, filter: true, width: 120 },
+    { headerName: 'Age', valueGetter: params => this.age(params.data) ?? '-', sortable: true, width: 100 },
+    { headerName: 'Organization', valueGetter: params => (this.organizations().find(o => o.id === params.data.organizationId)?.name ?? '-'), sortable: true, filter: true, flex: 1 },
+    { headerName: 'Payment', valueGetter: params => params.data.paymentStatus ?? 'unpaid', sortable: true, width: 120 },
+    { headerName: 'Event Payments (USD)', valueGetter: params => this.eventId() !== 'all' ? (params.data.eventPayments?.[this.eventId()]?.totalUSD ?? 0) : this.overallTotalUSD(params.data), width: 160, sortable: true, valueFormatter: p => (Number(p.value) || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) },
+    { headerName: 'Actions', cellRenderer: (params: ICellRendererParams) => {
+        const e = document.createElement('div');
+        e.style.display = 'flex'; e.style.gap = '8px';
+        const editBtn = document.createElement('button'); editBtn.textContent = 'Edit'; editBtn.className = 'mat-mdc-button mat-primary'; editBtn.onclick = () => this.edit(params.data as Attendant);
+        const payBtn = document.createElement('button'); payBtn.textContent = 'Add Payment'; payBtn.className = 'mat-mdc-outlined-button'; payBtn.onclick = () => this.addPayment(params.data as Attendant);
+        const viewA = document.createElement('a'); viewA.textContent = 'View Payments'; viewA.className = 'mat-mdc-button'; viewA.onclick = () => (window.location.href = `/app/attendants/${(params.data as Attendant).id}/payments`);
+        e.appendChild(editBtn); e.appendChild(payBtn); e.appendChild(viewA); return e;
+      }, width: 280 }
+  ];
 
   overallTotalUSD(a: Attendant): number {
     const map = a.eventPayments || {};
@@ -120,19 +98,7 @@ export class AttendantsComponent {
     return years;
   }
 
-  add(): void {
-    this.dialog.open(AttendantFormDialogComponent, { width: '640px' });
-  }
-
-  edit(row: Attendant): void {
-    this.dialog.open(AttendantFormDialogComponent, { width: '640px', data: row });
-  }
-
-  addPayment(row: Attendant): void {
-    this.dialog.open(PaymentFormDialogComponent, { width: '560px', data: { attendant: row } });
-  }
-
-  viewPayments(_row: Attendant): void {
-    // navigation handled via routerLink in template
-  }
+  add(): void { this.dialog.open(AttendantFormDialogComponent, { width: '640px' }); }
+  edit(row: Attendant): void { this.dialog.open(AttendantFormDialogComponent, { width: '640px', data: row }); }
+  addPayment(row: Attendant): void { this.dialog.open(PaymentFormDialogComponent, { width: '560px', data: { attendant: row } }); }
 }

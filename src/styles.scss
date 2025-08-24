@@ -2,6 +2,10 @@
 
 @use '@angular/material' as mat;
 
+/* AG Grid Quartz theme CSS */
+@import 'ag-grid-community/styles/ag-grid.css';
+@import 'ag-grid-community/styles/ag-theme-quartz.css';
+
 /* Define light and dark themes */
 $primary: mat.m2-define-palette(mat.$m2-indigo-palette);
 $accent: mat.m2-define-palette(mat.$m2-pink-palette, A200, A100, A400);
@@ -70,7 +74,7 @@ table[mat-table], .mat-mdc-table { width: 100% !important; }
 .mat-mdc-cell, .mat-mdc-header-cell { padding: 8px 12px; }
 
 /* Table container for full-height pages */
-.table-container { display: flex; flex-direction: column; }
+.table-container { display: flex; flex-direction: column; height: 100%; }
 .table-container table[mat-table] { flex: 1 1 auto; overflow: auto; }
 .table-container mat-paginator { margin-top: 8px; }
 
