@@ -2,10 +2,6 @@
 
 @use '@angular/material' as mat;
 
-/* AG Grid Quartz theme CSS */
-@import 'ag-grid-community/styles/ag-grid.css';
-@import 'ag-grid-community/styles/ag-theme-quartz.css';
-
 /* Define light and dark themes */
 $primary: mat.m2-define-palette(mat.$m2-indigo-palette);
 $accent: mat.m2-define-palette(mat.$m2-pink-palette, A200, A100, A400);

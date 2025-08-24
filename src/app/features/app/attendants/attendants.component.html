@@ -38,6 +38,4 @@
   </button>
 </div>
 
-<div class="ag-theme-quartz" style="height: calc(100vh - 260px); width: 100%;">
-  <ag-grid-angular [gridOptions]="gridOptions" [columnDefs]="columnDefs" (gridReady)="onGridReady($event)"></ag-grid-angular>
-</div>
+<ag-grid-angular style="height: calc(100vh - 260px); width: 100%;" [gridOptions]="gridOptions" [columnDefs]="columnDefs" (gridReady)="onGridReady($event)" theme="quartz"></ag-grid-angular>
