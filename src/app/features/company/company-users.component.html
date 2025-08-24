@@ -15,6 +15,11 @@
     <td mat-cell *matCellDef="let row">{{ row.email || '-' }}</td>
   </ng-container>
 
+  <ng-container matColumnDef="name">
+    <th mat-header-cell *matHeaderCellDef mat-sort-header>Name</th>
+    <td mat-cell *matCellDef="let row">{{ row.name || '-' }}</td>
+  </ng-container>
+
   <ng-container matColumnDef="userId">
     <th mat-header-cell *matHeaderCellDef mat-sort-header>User ID</th>
     <td mat-cell *matCellDef="let row">{{ row.userId }}</td>
@@ -39,8 +44,8 @@
     </td>
   </ng-container>
 
-  <tr mat-header-row *matHeaderRowDef="['email','userId','role']"></tr>
-  <tr mat-row *matRowDef="let row; columns: ['email','userId','role']"></tr>
+  <tr mat-header-row *matHeaderRowDef="['email','name','userId','role']"></tr>
+  <tr mat-row *matRowDef="let row; columns: ['email','name','userId','role']"></tr>
 </table>
 
 <mat-paginator [length]="memberships().length" [pageSize]="10" [pageSizeOptions]="[5,10,25,50]"></mat-paginator>

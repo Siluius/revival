@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { Auth, authState, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, updateProfile, User } from '@angular/fire/auth';
-import { Firestore, doc, docData, setDoc } from '@angular/fire/firestore';
+import { Firestore, doc, docData, setDoc, serverTimestamp } from '@angular/fire/firestore';
 import { Router } from '@angular/router';
 import { firstValueFrom, map } from 'rxjs';
 import { AppUserProfile } from './auth.interfaces';
@@ -26,9 +26,10 @@ export class AuthService {
       email: cred.user.email,
       displayName: cred.user.displayName ?? displayName ?? null,
       role: 'viewer',
-      preferences: {}
+      preferences: { theme: 'light' }
     };
     await setDoc(doc(this.firestore, `users/${cred.user.uid}`), profile);
+    await setDoc(doc(this.firestore, `emails/${cred.user.uid}`), { uid: cred.user.uid, email: cred.user.email, createdAt: serverTimestamp() });
     await this.activities.logAuth('login', { uid: cred.user.uid, email: cred.user.email, displayName: cred.user.displayName ?? null });
     return cred.user;
   }

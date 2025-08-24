@@ -12,7 +12,7 @@ import { MatSort, MatSortModule, Sort } from '@angular/material/sort';
 import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
 import { Firestore, doc, docData } from '@angular/fire/firestore';
 
-interface MembershipRow { userId: string; role: 'viewer' | 'editor' | 'admin'; email?: string | null; }
+interface MembershipRow { userId: string; role: 'viewer' | 'editor' | 'admin'; email?: string | null; name?: string | null; }
 
 @Component({
   selector: 'app-company-users',
@@ -34,18 +34,17 @@ export class CompanyUsersComponent {
   protected readonly rows = toSignal(this.mapRows(), { initialValue: [] as MembershipRow[] });
 
   private mapRows() {
-    return docData(doc(this.firestore, '__dummy__/__dummy__')).pipe() as any; // placeholder; not used
+    return docData(doc(this.firestore, '__noop__/__noop__')).pipe() as any;
   }
 
   get data(): MembershipRow[] {
-    const base = (this.memberships() || []) as Array<{ userId: string; role: any }>;
-    const withEmail: MembershipRow[] = base.map(m => ({ userId: m.userId, role: m.role, email: (m as any).email ?? null }));
+    const base = (this.memberships() || []) as Array<{ userId: string; role: any; email?: string | null; name?: string | null }>;
+    const withFields: MembershipRow[] = base.map(m => ({ userId: m.userId, role: m.role, email: (m as any).email ?? null, name: (m as any).name ?? null }));
     const s = this.sortState();
-    const sorted = [...withEmail].sort((a, b) => {
+    const sorted = [...withFields].sort((a, b) => {
       const dir = s.direction === 'desc' ? -1 : 1;
-      const av: any = (s.active === 'userId') ? a.userId : s.active === 'role' ? a.role : (a.email ?? '');
-      const bv: any = (s.active === 'userId') ? b.userId : s.active === 'role' ? b.role : (b.email ?? '');
-      return String(av).localeCompare(String(bv)) * dir;
+      const pick = (row: MembershipRow) => (s.active === 'userId' ? row.userId : s.active === 'role' ? row.role : s.active === 'name' ? (row.name ?? '') : (row.email ?? ''));
+      return String(pick(a)).localeCompare(String(pick(b))) * dir;
     });
     const pageIndex = this.paginator?.pageIndex ?? 0;
     const pageSize = this.paginator?.pageSize ?? sorted.length;
