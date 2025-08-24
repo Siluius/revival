@@ -16,7 +16,9 @@ import { EventsService } from '../../../shared/events/events.service';
 import { AppEvent } from '../../../shared/events/events.interfaces';
 import { PaymentFormDialogComponent } from '../../payments/payment-form-dialog.component';
 import { AgGridModule } from 'ag-grid-angular';
-import { ColDef, GridApi, GridOptions, ICellRendererParams, themeQuartz } from 'ag-grid-community';
+import { ColDef, GridApi, GridOptions, ICellRendererParams, themeQuartz, ModuleRegistry, AllCommunityModule } from 'ag-grid-community';
+
+ModuleRegistry.registerModules([AllCommunityModule]);
 
 @Component({
   selector: 'app-attendants',
