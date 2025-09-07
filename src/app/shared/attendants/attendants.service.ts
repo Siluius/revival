@@ -18,7 +18,7 @@ export class AttendantsService {
 
   getById$(id: string): Observable<Attendant | null> {
     const ref = doc(this.firestore, `attendants/${id}`);
-    return docData(ref, { idField: 'id' }).pipe(map(d => (d as Attendant) ?? null));
+    return docData(ref, { idField: 'id' }).pipe(map((d: unknown) => (d as Attendant) ?? null));
   }
 
   async create(data: NewAttendant): Promise<string> {
@@ -26,6 +26,7 @@ export class AttendantsService {
       ...data,
       companyId: this.company.selectedCompanyId(),
       paymentStatus: 'unpaid',
+      alreadyInGroup: false,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp()
     });

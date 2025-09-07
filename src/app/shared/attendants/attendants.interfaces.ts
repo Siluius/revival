@@ -18,4 +18,4 @@ export interface Attendant {
   updatedAt?: unknown;
 }
 
-export type NewAttendant = Pick<Attendant, 'firstName' | 'lastName' | 'address' | 'phone' | 'dateOfBirth' | 'gender' | 'organizationId'>;
+export type NewAttendant = Pick<Attendant, 'firstName' | 'lastName' | 'address' | 'phone' | 'dateOfBirth' | 'gender' | 'organizationId' | 'alreadyInGroup'>;
