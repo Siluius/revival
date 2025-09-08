@@ -26,10 +26,15 @@ export class DashboardComponent {
   @ViewChild('chart', { static: false }) chartEl?: ElementRef<HTMLDivElement>;
   private chart?: Highcharts.Chart;
   protected chartOptions: Highcharts.Options = {
-    chart: { type: 'column' },
+    chart: { type: 'pie' },
     title: { text: 'Attendants by Status per Event' },
-    xAxis: { categories: [] },
-    yAxis: { min: 0, title: { text: 'Attendants' } },
+    plotOptions: {
+      pie: {
+        allowPointSelect: true,
+        cursor: 'pointer',
+        dataLabels: { enabled: true, format: '{point.name}: {point.y}' }
+      }
+    },
     series: []
   };
 
@@ -54,9 +59,24 @@ export class DashboardComponent {
           });
           return { type: 'column', name: status.toUpperCase(), data } as Highcharts.SeriesColumnOptions;
         });
-        this.chartOptions = { ...this.chartOptions, xAxis: { categories }, series };
+
+        // Build pie data by aggregating totals across all events
+        const pieData = series.map(s => ({
+          name: s.name || '',
+          y: (s.data as number[]).reduce((sum, val) => sum + (typeof val === 'number' ? val : 0), 0)
+        }));
+
+        const pieSeries: Highcharts.SeriesPieOptions = {
+          type: 'pie',
+          name: 'Attendants',
+          colorByPoint: true,
+          data: pieData
+        };
+
+        this.chartOptions = { ...this.chartOptions, chart: { type: 'pie' }, series: [pieSeries] };
         this.renderChart();
-        // build table rows
+
+        // build table rows (per-event breakdown remains unchanged)
         this.statusTableRows = eventIds.map((evtId, idx) => ({
           event: categories[idx],
           unpaid: (series[0].data as number[])[idx] ?? 0,

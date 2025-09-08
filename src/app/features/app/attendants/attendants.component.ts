@@ -66,12 +66,12 @@ export class AttendantsComponent {
     { headerName: 'Event Payments (USD)', valueGetter: (params: ValueGetterParams<Attendant>) => this.eventId() !== 'all' ? (((params.data as Attendant).eventPayments?.[this.eventId()]?.totalUSD ?? 0)) : this.overallTotalUSD(params.data as Attendant), width: 160, sortable: true, valueFormatter: (p: ValueFormatterParams) => (Number(p.value) || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) },
     { headerName: 'Actions', cellRenderer: (params: ICellRendererParams) => {
         const e = document.createElement('div');
-        e.style.display = 'flex'; e.style.gap = '8px';
+        e.style.display = 'flex'; e.style.gap = '4px';
         const editBtn = document.createElement('button'); editBtn.textContent = 'Edit'; editBtn.className = 'mat-mdc-button mat-primary'; editBtn.onclick = () => this.edit(params.data as Attendant);
         const payBtn = document.createElement('button'); payBtn.textContent = 'Add Payment'; payBtn.className = 'mat-mdc-outlined-button'; payBtn.onclick = () => this.addPayment(params.data as Attendant);
         const viewA = document.createElement('a'); viewA.textContent = 'View Payments'; viewA.className = 'mat-mdc-button'; viewA.onclick = () => (window.location.href = `/app/attendants/${(params.data as Attendant).id}/payments`);
         e.appendChild(editBtn); e.appendChild(payBtn); e.appendChild(viewA); return e;
-      }, width: 280 }
+      }, width: 300 }
   ];
 
   protected readonly gridOptions: GridOptions = {

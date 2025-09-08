@@ -9,6 +9,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatNativeDateModule } from '@angular/material/core';
 import { MatIconModule } from '@angular/material/icon';
+import { MatCheckboxModule } from '@angular/material/checkbox';
 import { AttendantsService } from '../../../shared/attendants/attendants.service';
 import { Attendant, Gender } from '../../../shared/attendants/attendants.interfaces';
 import { OrganizationsService } from '../../../shared/organizations/organizations.service';
@@ -20,7 +21,7 @@ import { LoadingService } from '../../../shared/loading/loading.service';
 @Component({
   selector: 'app-attendant-form-dialog',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, MatDialogModule, MatFormFieldModule, MatInputModule, MatButtonModule, MatSelectModule, MatDatepickerModule, MatNativeDateModule, MatIconModule],
+  imports: [CommonModule, ReactiveFormsModule, MatDialogModule, MatFormFieldModule, MatInputModule, MatButtonModule, MatSelectModule, MatDatepickerModule, MatNativeDateModule, MatIconModule, MatCheckboxModule],
   templateUrl: './attendant-form-dialog.component.html'
 })
 export class AttendantFormDialogComponent {
@@ -41,7 +42,8 @@ export class AttendantFormDialogComponent {
     phone: [''],
     dateOfBirth: [null as Date | null, [Validators.required]],
     gender: [null as Gender | null, [Validators.required]],
-    organizationId: [null as string | null]
+    organizationId: [null as string | null],
+    alreadyInGroup: [false as boolean]
   });
 
   constructor() {
@@ -59,7 +61,8 @@ export class AttendantFormDialogComponent {
         phone: (this.data as any).phone ?? '',
         dateOfBirth: dob,
         gender: this.data.gender ?? null,
-        organizationId: this.data.organizationId ?? null
+        organizationId: this.data.organizationId ?? null,
+        alreadyInGroup: (this.data as any).alreadyInGroup ?? false
       });
     }
   }
@@ -75,7 +78,8 @@ export class AttendantFormDialogComponent {
         phone: value.phone ?? '',
         dateOfBirth: value.dateOfBirth ?? null,
         gender: value.gender ?? null,
-        organizationId: value.organizationId ?? null
+        organizationId: value.organizationId ?? null,
+        alreadyInGroup: !!value.alreadyInGroup
       };
       if (this.data?.id) {
         await this.service.update(this.data.id, payload);

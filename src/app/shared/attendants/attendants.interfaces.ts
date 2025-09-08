@@ -11,6 +11,7 @@ export interface Attendant {
   dateOfBirth?: Date | null; // stored as Firestore Timestamp/Date
   gender?: Gender | null;
   organizationId?: string | null;
+  alreadyInGroup?: boolean | null;
   paymentStatus?: PaymentStatus | null;
   // map of eventId -> totalUSD and status
   eventPayments?: Record<string, { totalUSD: number; status: PaymentStatus } | undefined>;
