@@ -1,5 +1,5 @@
 export type Gender = 'male' | 'female';
-export type PaymentStatus = 'unpaid' | 'partial' | 'paid' | 'cancelled';
+export type PaymentStatus = 'unpaid' | 'partial' | 'paid';
 export type TShirtSize = '18' | 'S' | 'M' | 'L' | 'XL';
 
 export interface Attendant {

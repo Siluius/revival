@@ -1,4 +1,4 @@
-import { Injectable, inject, signal } from '@angular/core';
+import { Injectable, inject, signal, NgZone } from '@angular/core';
 import { Auth, authState } from '@angular/fire/auth';
 import { Firestore, addDoc, collection, collectionData, query, serverTimestamp, where, getDocs, updateDoc, doc, getDoc } from '@angular/fire/firestore';
 import { map, Observable, switchMap, of } from 'rxjs';
@@ -19,6 +19,7 @@ export interface CompanyInvite {
 export class CompanyService {
   private readonly firestore = inject(Firestore);
   private readonly auth = inject(Auth);
+  private readonly ngZone = inject(NgZone);
   readonly selectedCompanyId = signal<string | null>(localStorage.getItem('companyId') || null);
 
   setSelectedCompanyId(id: string | null): void {
@@ -30,14 +31,16 @@ export class CompanyService {
     return authState(this.auth).pipe(
       switchMap(user => {
         if (!user) return of([] as Company[]);
-        const membershipsQ = query(collection(this.firestore, 'companyMemberships'), where('userId', '==', user.uid));
-        return collectionData(membershipsQ, { idField: 'id' }).pipe(
-          map((ms: any[]) => ms.map(m => m.companyId)),
-          switchMap(companyIds => companyIds.length
-            ? collectionData(query(collection(this.firestore, 'companies'), where('__name__', 'in', companyIds)), { idField: 'id' }) as Observable<Company[]>
-            : of([] as Company[])
-          )
-        );
+        return this.ngZone.run(() => {
+          const membershipsQ = query(collection(this.firestore, 'companyMemberships'), where('userId', '==', user.uid));
+          return collectionData(membershipsQ, { idField: 'id' }).pipe(
+            map((ms: any[]) => ms.map(m => m.companyId)),
+            switchMap(companyIds => companyIds.length
+              ? collectionData(query(collection(this.firestore, 'companies'), where('__name__', 'in', companyIds)), { idField: 'id' }) as Observable<Company[]>
+              : of([] as Company[])
+            )
+          );
+        });
       })
     );
   }
@@ -51,8 +54,10 @@ export class CompanyService {
     return authState(this.auth).pipe(
       switchMap(user => {
         if (!user) return of(null);
-        const q = query(collection(this.firestore, 'companyMemberships'), where('companyId', '==', companyId), where('userId', '==', user.uid));
-        return collectionData(q, { idField: 'id' }).pipe(map((rows: any[]) => rows[0] ?? null));
+        return this.ngZone.run(() => {
+          const q = query(collection(this.firestore, 'companyMemberships'), where('companyId', '==', companyId), where('userId', '==', user.uid));
+          return collectionData(q, { idField: 'id' }).pipe(map((rows: any[]) => rows[0] ?? null));
+        });
       })
     );
   }
@@ -77,8 +82,10 @@ export class CompanyService {
       switchMap(user => {
         const email = user?.email?.toLowerCase();
         if (!email) return of([] as CompanyInvite[]);
-        const q = query(collection(this.firestore, 'companyInvites'), where('email', '==', email), where('status', '==', 'pending'));
-        return collectionData(q, { idField: 'id' }) as unknown as Observable<CompanyInvite[]>;
+        return this.ngZone.run(() => {
+          const q = query(collection(this.firestore, 'companyInvites'), where('email', '==', email), where('status', '==', 'pending'));
+          return collectionData(q, { idField: 'id' }) as unknown as Observable<CompanyInvite[]>;
+        });
       })
     );
   }

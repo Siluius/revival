@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { Firestore, addDoc, collection, collectionData, deleteDoc, doc, docData, orderBy, query, serverTimestamp, updateDoc, where, writeBatch, increment, getDoc, getDocs } from '@angular/fire/firestore';
-import { Observable, map } from 'rxjs';
+import { Observable, map, firstValueFrom } from 'rxjs';
 import { NewPayment, Payment } from './payments.interfaces';
 import { ActivitiesService } from '../activities/activities.service';
 import { Auth } from '@angular/fire/auth';
@@ -80,19 +80,33 @@ export class PaymentsService {
   }
 
   async delete(id: string): Promise<void> {
-    const current = await this.getByIdOnce(id);
-    if (!current) return;
-    await deleteDoc(doc(this.firestore, `payments/${id}`));
-    await this.updateCounters(current.attendantId, current.eventId, -current.amountUSD);
-    await this.recalculateAttendantEventStatus(current.attendantId, current.eventId);
-    await this.recalculateOverallAttendantStatus(current.attendantId);
-    const user = this.auth.currentUser;
-    await this.activities.logEntity('payments', 'delete', 'payments', id, { uid: user?.uid ?? null, email: user?.email ?? null, displayName: user?.displayName ?? null }, { previous: current });
+    try {
+      const current = await this.getByIdOnce(id);
+      if (!current) {
+        console.warn(`Payment with id ${id} not found`);
+        return;
+      }
+      
+      await deleteDoc(doc(this.firestore, `payments/${id}`));
+      await this.updateCounters(current.attendantId, current.eventId, -current.amountUSD);
+      await this.recalculateAttendantEventStatus(current.attendantId, current.eventId);
+      await this.recalculateOverallAttendantStatus(current.attendantId);
+      
+      const user = this.auth.currentUser;
+      await this.activities.logEntity('payments', 'delete', 'payments', id, { 
+        uid: user?.uid ?? null, 
+        email: user?.email ?? null, 
+        displayName: user?.displayName ?? null 
+      }, { previous: current });
+    } catch (error) {
+      console.error('Error deleting payment:', error);
+      throw error;
+    }
   }
 
   private async getByIdOnce(id: string): Promise<Payment | null> {
     const ref = doc(this.firestore, `payments/${id}`);
-    const snap = await docData(ref, { idField: 'id' }).pipe(map(d => (d as Payment) ?? null)).toPromise();
+    const snap = await firstValueFrom(docData(ref, { idField: 'id' }).pipe(map(d => (d as Payment) ?? null)));
     return snap ?? null;
   }
 
@@ -113,7 +127,7 @@ export class PaymentsService {
     const totalUSD = (counterSnap.exists() ? (counterSnap.data() as any)?.totalUSD : 0) as number;
     const eventSnap = await getDoc(doc(this.firestore, `events/${eventId}`));
     const costUSD = (eventSnap.exists() ? (eventSnap.data() as any)?.costUSD : null) as number | null;
-    let status: 'unpaid' | 'partial' | 'paid' | 'cancelled' = 'unpaid';
+    let status: 'unpaid' | 'partial' | 'paid' = 'unpaid';
     if (costUSD && costUSD > 0) {
       status = totalUSD >= costUSD ? 'paid' : totalUSD > 0 ? 'partial' : 'unpaid';
     } else {
@@ -131,7 +145,7 @@ export class PaymentsService {
 
     const attRef = doc(this.firestore, `attendants/${attendantId}`);
     const attSnap = await getDoc(attRef);
-    const eventPayments = (attSnap.exists() ? (attSnap.data() as any)?.eventPayments : {}) as Record<string, { totalUSD: number; status: 'unpaid' | 'partial' | 'paid' | 'cancelled' } | undefined>;
+    const eventPayments = (attSnap.exists() ? (attSnap.data() as any)?.eventPayments : {}) as Record<string, { totalUSD: number; status: 'unpaid' | 'partial' | 'paid' } | undefined>;
 
     let anyPartial = false;
     let allPaid = true;

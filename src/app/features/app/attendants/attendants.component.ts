@@ -55,14 +55,17 @@ export class AttendantsComponent {
   }
 
   protected readonly columnDefs: ColDef[] = [
-    { field: 'firstName', headerName: 'First Name', sortable: true, filter: true, flex: 1 },
-    { field: 'lastName', headerName: 'Last Name', sortable: true, filter: true, flex: 1 },
+    { field: 'firstName', headerName: 'First Name', sortable: true, filter: true, flex: 1, minWidth: 120 },
+    { field: 'lastName', headerName: 'Last Name', sortable: true, filter: true, flex: 1, minWidth: 120 },
+    { headerName: 'Payments', valueGetter: (params: ValueGetterParams<Attendant>) => this.eventId() !== 'all' ? (((params.data as Attendant).eventPayments?.[this.eventId()]?.totalUSD ?? 0)) : this.overallTotalUSD(params.data as Attendant), width: 160, sortable: true, valueFormatter: (p: ValueFormatterParams) => (Number(p.value) || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) },
+    { headerName: 'Status', valueGetter: (params: ValueGetterParams<Attendant>) => (params.data as Attendant).paymentStatus ?? 'unpaid', sortable: true, width: 120 },
+    { field: 'updatedAt', headerName: 'Last Updated', valueFormatter: p => {
+        const v: any = p.value; const d = (v?.toDate?.() ?? v) as Date | undefined; return d ? new Date(d).toLocaleString() : '';
+      }, sort: 'desc', comparator: (a: any, b: any) => new Date(a).getTime() - new Date(b).getTime(), width: 180 },
+    { headerName: 'Organization', valueGetter: (params: ValueGetterParams<Attendant>) => (this.organizations().find((o: Organization) => o.id === (params.data as Attendant).organizationId)?.name ?? '-'), sortable: true, filter: true, flex: 1 },
     { field: 'gender', headerName: 'Gender', sortable: true, filter: true, width: 120 },
     { field: 'tShirtSize', headerName: 'T-Shirt Size', sortable: true, filter: true, width: 120 },
     { headerName: 'Age', valueGetter: (params: ValueGetterParams<Attendant>) => this.age(params.data as Attendant) ?? '-', sortable: true, width: 100 },
-    { headerName: 'Organization', valueGetter: (params: ValueGetterParams<Attendant>) => (this.organizations().find((o: Organization) => o.id === (params.data as Attendant).organizationId)?.name ?? '-'), sortable: true, filter: true, flex: 1 },
-    { headerName: 'Payment', valueGetter: (params: ValueGetterParams<Attendant>) => (params.data as Attendant).paymentStatus ?? 'unpaid', sortable: true, width: 120 },
-    { headerName: 'Event Payments (USD)', valueGetter: (params: ValueGetterParams<Attendant>) => this.eventId() !== 'all' ? (((params.data as Attendant).eventPayments?.[this.eventId()]?.totalUSD ?? 0)) : this.overallTotalUSD(params.data as Attendant), width: 160, sortable: true, valueFormatter: (p: ValueFormatterParams) => (Number(p.value) || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) },
     { headerName: 'Actions', cellRenderer: (params: ICellRendererParams) => {
         const e = document.createElement('div');
         e.style.display = 'flex'; e.style.gap = '4px';
@@ -70,7 +73,7 @@ export class AttendantsComponent {
         const payBtn = document.createElement('button'); payBtn.textContent = 'Add Payment'; payBtn.className = 'mat-mdc-outlined-button'; payBtn.onclick = () => this.addPayment(params.data as Attendant);
         const viewA = document.createElement('a'); viewA.textContent = 'View Payments'; viewA.className = 'mat-mdc-button'; viewA.onclick = () => (window.location.href = `/app/attendants/${(params.data as Attendant).id}/payments`);
         e.appendChild(editBtn); e.appendChild(payBtn); e.appendChild(viewA); return e;
-      }, width: 300 }
+      }, width: 300, pinned: 'right' }
   ];
 
   protected readonly gridOptions: GridOptions = {
@@ -78,6 +81,7 @@ export class AttendantsComponent {
     theme: themeQuartz,
     pagination: true,
     paginationPageSize: 10,
+    paginationPageSizeSelector: [10, 20, 50, 100],
     suppressCellFocus: true,
     animateRows: true,
     defaultColDef: { sortable: true, filter: true, resizable: true }
@@ -102,7 +106,22 @@ export class AttendantsComponent {
       const matchesPayment = payment === 'all' || effectiveStatus === payment;
       return matchesTerm && matchesGender && matchesPayment && matchesOrg;
     });
-    return filtered.sort((a, b) => `${a.lastName} ${a.firstName}`.localeCompare(`${b.lastName} ${b.firstName}`));
+    return filtered.sort((a, b) => {
+      // Sort by updatedAt descending (most recent first)
+      const aUpdated = (a as any).updatedAt;
+      const bUpdated = (b as any).updatedAt;
+      const aDate = aUpdated?.toDate?.() ?? aUpdated;
+      const bDate = bUpdated?.toDate?.() ?? bUpdated;
+      
+      if (aDate && bDate) {
+        return new Date(bDate).getTime() - new Date(aDate).getTime();
+      }
+      if (aDate) return -1;
+      if (bDate) return 1;
+      
+      // Fallback to name sorting if no updatedAt
+      return `${a.lastName} ${a.firstName}`.localeCompare(`${b.lastName} ${b.firstName}`);
+    });
   }
 
   overallTotalUSD(a: Attendant): number {

@@ -61,6 +61,7 @@ export class AttendantsPaymentsComponent {
     theme: themeQuartz,
     pagination: true,
     paginationPageSize: 10,
+    paginationPageSizeSelector: [10, 20, 50, 100],
     suppressCellFocus: true,
     animateRows: true,
     defaultColDef: { sortable: true, filter: true, resizable: true }

@@ -4,8 +4,9 @@ import { MatCardModule } from '@angular/material/card';
 import { MatTableModule } from '@angular/material/table';
 import type { User } from '@angular/fire/auth';
 import { AuthService } from '../../../shared/auth/auth.service';
-import { Firestore, collection, collectionData } from '@angular/fire/firestore';
+import { Firestore, collection, collectionData, query, where } from '@angular/fire/firestore';
 import { toSignal } from '@angular/core/rxjs-interop';
+import { CompanyService } from '../../../shared/company/company.service';
 import * as Highcharts from 'highcharts';
 
 @Component({
@@ -17,10 +18,21 @@ import * as Highcharts from 'highcharts';
 export class DashboardComponent {
   private readonly auth = inject(AuthService);
   private readonly firestore = inject(Firestore);
+  private readonly company = inject(CompanyService);
   protected readonly displayName = signal<string | null>('');
 
-  protected readonly eventsCount = toSignal(collectionData(collection(this.firestore, 'events')).pipe(), { initialValue: [] as any[] });
-  protected readonly attendantsCount = toSignal(collectionData(collection(this.firestore, 'attendants')).pipe(), { initialValue: [] as any[] });
+  protected readonly eventsCount = toSignal(collectionData(
+    query(collection(this.firestore, 'events'), 
+      ...(this.company.selectedCompanyId() ? [where('companyId', '==', this.company.selectedCompanyId())] : [])
+    )
+  ).pipe(), { initialValue: [] as any[] });
+  
+  protected readonly attendantsCount = toSignal(collectionData(
+    query(collection(this.firestore, 'attendants'), 
+      ...(this.company.selectedCompanyId() ? [where('companyId', '==', this.company.selectedCompanyId())] : [])
+    )
+  ).pipe(), { initialValue: [] as any[] });
+  
   protected readonly paymentsCount = toSignal(collectionData(collection(this.firestore, 'payments')).pipe(), { initialValue: [] as any[] });
 
   @ViewChild('chart', { static: false }) chartEl?: ElementRef<HTMLDivElement>;
@@ -60,33 +72,38 @@ export class DashboardComponent {
     series: []
   };
 
-  protected statusTableRows: Array<{ event: string; unpaid: number; partial: number; paid: number; cancelled: number }> = [];
+  protected statusTableRows: Array<{ event: string; unpaid: number; partial: number; paid: number }> = [];
 
   constructor() {
     this.auth.authState$.subscribe((user: User | null) => this.displayName.set(user?.displayName ?? user?.email ?? null));
 
-    collectionData(collection(this.firestore, 'events'), { idField: 'id' }).subscribe((events: any[]) => {
+    const companyId = this.company.selectedCompanyId();
+    const eventsQuery = companyId ? 
+      query(collection(this.firestore, 'events'), where('companyId', '==', companyId)) : 
+      collection(this.firestore, 'events');
+    const attendantsQuery = companyId ? 
+      query(collection(this.firestore, 'attendants'), where('companyId', '==', companyId)) : 
+      collection(this.firestore, 'attendants');
+      
+    collectionData(eventsQuery, { idField: 'id' }).subscribe((events: any[]) => {
       const categories: string[] = events.map(e => e.name);
       const eventIds: string[] = events.map(e => e.id);
-      collectionData(collection(this.firestore, 'attendants')).subscribe((atts: any[]) => {
-        const statuses = ['unpaid', 'partial', 'paid', 'cancelled'] as const;
-        const series = statuses.map(status => {
-          const data = eventIds.map(evtId => {
-            let count = 0;
-            for (const a of atts) {
-              const ep = a.eventPayments?.[evtId];
-              if (ep && ep.status === status) count++;
-            }
-            return count;
-          });
-          return { type: 'column', name: status.toUpperCase(), data } as Highcharts.SeriesColumnOptions;
-        });
+      collectionData(attendantsQuery).subscribe((atts: any[]) => {
+        // Count each attendant only once using overall payment status
+        const statusCounts = { unpaid: 0, partial: 0, paid: 0 };
+        for (const a of atts) {
+          const status = a.paymentStatus ?? 'unpaid';
+          if (status in statusCounts) {
+            statusCounts[status as keyof typeof statusCounts]++;
+          }
+        }
 
-        // Build pie data by aggregating totals across all events
-        const pieData = series.map(s => ({
-          name: s.name || '',
-          y: (s.data as number[]).reduce((sum, val) => sum + (typeof val === 'number' ? val : 0), 0)
-        }));
+        // Build pie data with unique attendant counts
+        const pieData = [
+          { name: 'UNPAID', y: statusCounts.unpaid },
+          { name: 'PARTIAL', y: statusCounts.partial },
+          { name: 'PAID', y: statusCounts.paid }
+        ];
 
         const pieSeries: Highcharts.SeriesPieOptions = {
           type: 'pie',
@@ -97,14 +114,25 @@ export class DashboardComponent {
         this.chartOptions = { ...this.chartOptions, chart: { type: 'pie' }, series: [pieSeries] };
         this.renderChart();
 
-        // build table rows (per-event breakdown remains unchanged)
-        this.statusTableRows = eventIds.map((evtId, idx) => ({
-          event: categories[idx],
-          unpaid: (series[0].data as number[])[idx] ?? 0,
-          partial: (series[1].data as number[])[idx] ?? 0,
-          paid: (series[2].data as number[])[idx] ?? 0,
-          cancelled: (series[3].data as number[])[idx] ?? 0
-        }));
+        // build table rows (per-event breakdown with event-specific statuses)
+        this.statusTableRows = eventIds.map((evtId, idx) => {
+          const statusCounts = { unpaid: 0, partial: 0, paid: 0 };
+          for (const a of atts) {
+            const ep = a.eventPayments?.[evtId];
+            const status = ep?.status ?? 'unpaid';
+            if (status in statusCounts) {
+              statusCounts[status as keyof typeof statusCounts]++;
+            }
+          }
+          return {
+            event: categories[idx],
+            unpaid: statusCounts.unpaid,
+            partial: statusCounts.partial,
+            paid: statusCounts.paid
+          };
+        });
+        
+        console.log('Dashboard table rows:', this.statusTableRows);
 
         // Build t-shirt size distribution data
         this.buildTShirtSizeChart(atts);
