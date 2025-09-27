@@ -1,0 +1,34 @@
+.daily-audit-container {
+  padding: 16px;
+}
+
+.summary-cards {
+  display: flex;
+  gap: 16px;
+  margin: 16px 0;
+}
+
+.summary-card {
+  flex: 1;
+  text-align: center;
+}
+
+.amount {
+  font-size: 2rem;
+  font-weight: bold;
+  color: #1976d2;
+}
+
+.payments-table {
+  margin-top: 16px;
+}
+
+.loading-container {
+  display: flex;
+  justify-content: center;
+  padding: 32px;
+}
+
+.spacer {
+  flex: 1 1 auto;
+}

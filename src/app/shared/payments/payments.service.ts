@@ -27,6 +27,29 @@ export class PaymentsService {
     return collectionData(q, { idField: 'id' }) as Observable<Payment[]>;
   }
 
+  async getPaymentsByDateRange(startDate: Date, endDate: Date): Promise<Payment[]> {
+    const companyId = this.company.selectedCompanyId();
+    console.log('PaymentsService - Company ID:', companyId);
+    console.log('PaymentsService - Date range:', { startDate, endDate });
+    
+    if (!companyId) {
+      console.log('PaymentsService - No company ID, returning empty array');
+      return [];
+    }
+    
+    const q = query(
+      this.collectionRef,
+      where('companyId', '==', companyId),
+      where('createdAt', '>=', startDate),
+      where('createdAt', '<=', endDate)
+    );
+    
+    const snapshot = await getDocs(q);
+    const payments = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Payment));
+    console.log('PaymentsService - Found payments:', payments.length);
+    return payments;
+  }
+
   getById$(id: string): Observable<Payment | null> {
     const ref = doc(this.firestore, `payments/${id}`);
     return docData(ref, { idField: 'id' }).pipe(map(d => (d as Payment) ?? null));
@@ -41,6 +64,7 @@ export class PaymentsService {
   async create(data: NewPayment): Promise<string> {
     const companyId = this.company.selectedCompanyId();
     const { amountUSD, originalAmount, originalCurrency } = this.toUSD(data.currency, data.amount);
+    const user = this.auth.currentUser;
     const result = await addDoc(this.collectionRef, {
       companyId,
       attendantId: data.attendantId,
@@ -49,12 +73,12 @@ export class PaymentsService {
       originalAmount,
       originalCurrency,
       createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp()
+      updatedAt: serverTimestamp(),
+      recordedBy: user?.displayName || user?.email || 'System'
     });
     await this.updateCounters(data.attendantId, data.eventId, amountUSD);
     await this.recalculateAttendantEventStatus(data.attendantId, data.eventId);
     await this.recalculateOverallAttendantStatus(data.attendantId);
-    const user = this.auth.currentUser;
     await this.activities.logEntity('payments', 'create', 'payments', result.id, { uid: user?.uid ?? null, email: user?.email ?? null, displayName: user?.displayName ?? null }, { data, amountUSD, companyId });
     return result.id;
   }

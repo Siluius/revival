@@ -1,0 +1,93 @@
+<div class="monthly-audit-container">
+  <mat-card>
+    <mat-toolbar>
+      <span>Monthly Payment Report - {{ getFormattedDate() }}</span>
+      <span class="spacer"></span>
+      <button mat-icon-button (click)="refreshData()">
+        <mat-icon>refresh</mat-icon>
+      </button>
+    </mat-toolbar>
+
+    <div class="monthly-summary">
+      <mat-card class="summary-card">
+        <mat-card-header>
+          <mat-card-title>Total USD</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="amount">${{ monthlyTotalUSD() | number:'1.2-2' }}</div>
+        </mat-card-content>
+      </mat-card>
+
+      <mat-card class="summary-card">
+        <mat-card-header>
+          <mat-card-title>Total NIO</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="amount">C${{ monthlyTotalNIO() | number:'1.2-2' }}</div>
+        </mat-card-content>
+      </mat-card>
+
+      <mat-card class="summary-card">
+        <mat-card-header>
+          <mat-card-title>Total Payments</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="amount">{{ monthlyTotalPayments() }}</div>
+        </mat-card-content>
+      </mat-card>
+
+      <mat-card class="summary-card">
+        <mat-card-header>
+          <mat-card-title>Days with Payments</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="amount">{{ monthlySummary().length }}</div>
+        </mat-card-content>
+      </mat-card>
+    </div>
+
+    <div class="daily-breakdown" *ngIf="!loading()">
+      <h3>Daily Breakdown</h3>
+      <table mat-table [dataSource]="monthlySummary()" class="mat-elevation-z1">
+        <ng-container matColumnDef="date">
+          <th mat-header-cell *matHeaderCellDef>Date</th>
+          <td mat-cell *matCellDef="let row">{{ row.date }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="totalUSD">
+          <th mat-header-cell *matHeaderCellDef>Total USD</th>
+          <td mat-cell *matCellDef="let row">${{ row.totalUSD | number:'1.2-2' }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="totalNIO">
+          <th mat-header-cell *matHeaderCellDef>Total NIO</th>
+          <td mat-cell *matCellDef="let row">C${{ row.totalNIO | number:'1.2-2' }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="paymentCount">
+          <th mat-header-cell *matHeaderCellDef>Payments</th>
+          <td mat-cell *matCellDef="let row">
+            <mat-chip color="primary">{{ row.activePayments }}</mat-chip>
+            <mat-chip color="warn" *ngIf="row.deletedPayments > 0">{{ row.deletedPayments }} deleted</mat-chip>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="actions">
+          <th mat-header-cell *matHeaderCellDef>Actions</th>
+          <td mat-cell *matCellDef="let row">
+            <button mat-icon-button (click)="viewDayDetails(row)">
+              <mat-icon>visibility</mat-icon>
+            </button>
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="['date', 'totalUSD', 'totalNIO', 'paymentCount', 'actions']"></tr>
+        <tr mat-row *matRowDef="let row; columns: ['date', 'totalUSD', 'totalNIO', 'paymentCount', 'actions']"></tr>
+      </table>
+    </div>
+
+    <div class="loading-container" *ngIf="loading()">
+      <mat-spinner></mat-spinner>
+    </div>
+  </mat-card>
+</div>

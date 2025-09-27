@@ -5,6 +5,55 @@
 .auth-card h2 { margin: 0 0 12px; }
 .error { color: #c62828; }
 
+/* Google login styles */
+.divider {
+  margin: 0.5rem 0 0.25rem 0;
+  position: relative;
+}
+
+.divider-text {
+  background: white;
+  padding: 0 1rem;
+  color: #666;
+  font-size: 0.875rem;
+}
+
+.google-login {
+  display: flex;
+  justify-content: center;
+  margin-top: 0.25rem;
+}
+
+.google-button {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border: 1px solid #dadce0;
+  border-radius: 4px;
+  background: white;
+  color: #3c4043;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.google-button:hover {
+  background: #f8f9fa;
+  border-color: #dadce0;
+  box-shadow: 0 1px 2px 0 rgba(60, 64, 67, 0.3), 0 1px 3px 1px rgba(60, 64, 67, 0.15);
+}
+
+.google-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.google-logo {
+  width: 18px;
+  height: 18px;
+}
+
 @media (max-width: 420px) {
   .auth-card { width: calc(100% - 32px); }
 }

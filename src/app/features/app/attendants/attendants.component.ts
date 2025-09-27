@@ -17,6 +17,7 @@ import { AppEvent } from '../../../shared/events/events.interfaces';
 import { PaymentFormDialogComponent } from '../../payments/payment-form-dialog.component';
 import { AgGridModule } from 'ag-grid-angular';
 import { ColDef, GridApi, GridOptions, ICellRendererParams, themeQuartz, ModuleRegistry, AllCommunityModule, ValueGetterParams, ValueFormatterParams } from 'ag-grid-community';
+import { CompanyService } from '../../../shared/company/company.service';
 
 ModuleRegistry.registerModules([AllCommunityModule]);
 
@@ -31,6 +32,7 @@ export class AttendantsComponent {
   private readonly orgService = inject(OrganizationsService);
   private readonly eventsService = inject(EventsService);
   private readonly dialog = inject(MatDialog);
+  private readonly company = inject(CompanyService);
 
   protected gridApi?: GridApi;
   protected readonly theme = themeQuartz;
@@ -44,6 +46,12 @@ export class AttendantsComponent {
   protected readonly allAttendants = toSignal(this.service.getAll$(), { initialValue: [] as Attendant[] });
   protected readonly organizations = toSignal(this.orgService.getAll$(), { initialValue: [] as Organization[] });
   protected readonly events = toSignal(this.eventsService.getAll$(), { initialValue: [] as AppEvent[] });
+
+  protected readonly companyRole = toSignal(this.company.getMyCurrentCompanyRole$(), { initialValue: null });
+  protected readonly canEdit = computed(() => {
+    const role = this.companyRole();
+    return role === 'editor' || role === 'admin';
+  });
 
   protected readonly rowData = computed(() => this.applyClientFiltersAndSort(this.allAttendants()));
 
@@ -69,10 +77,30 @@ export class AttendantsComponent {
     { headerName: 'Actions', cellRenderer: (params: ICellRendererParams) => {
         const e = document.createElement('div');
         e.style.display = 'flex'; e.style.gap = '4px';
-        const editBtn = document.createElement('button'); editBtn.textContent = 'Edit'; editBtn.className = 'mat-mdc-button mat-primary'; editBtn.onclick = () => this.edit(params.data as Attendant);
-        const payBtn = document.createElement('button'); payBtn.textContent = 'Add Payment'; payBtn.className = 'mat-mdc-outlined-button'; payBtn.onclick = () => this.addPayment(params.data as Attendant);
-        const viewA = document.createElement('a'); viewA.textContent = 'View Payments'; viewA.className = 'mat-mdc-button'; viewA.onclick = () => (window.location.href = `/app/attendants/${(params.data as Attendant).id}/payments`);
-        e.appendChild(editBtn); e.appendChild(payBtn); e.appendChild(viewA); return e;
+        
+        // Only show edit and add payment buttons if user can edit
+        if (this.canEdit()) {
+          const editBtn = document.createElement('button'); 
+          editBtn.textContent = 'Edit'; 
+          editBtn.className = 'mat-mdc-button mat-primary'; 
+          editBtn.onclick = () => this.edit(params.data as Attendant);
+          e.appendChild(editBtn);
+          
+          const payBtn = document.createElement('button'); 
+          payBtn.textContent = 'Add Payment'; 
+          payBtn.className = 'mat-mdc-outlined-button'; 
+          payBtn.onclick = () => this.addPayment(params.data as Attendant);
+          e.appendChild(payBtn);
+        }
+        
+        // View payments is always available
+        const viewA = document.createElement('a'); 
+        viewA.textContent = 'View Payments'; 
+        viewA.className = 'mat-mdc-button'; 
+        viewA.onclick = () => (window.location.href = `/app/attendants/${(params.data as Attendant).id}/payments`);
+        e.appendChild(viewA); 
+        
+        return e;
       }, width: 300, pinned: 'right' }
   ];
 
@@ -146,7 +174,18 @@ export class AttendantsComponent {
     return years;
   }
 
-  add(): void { this.dialog.open(AttendantFormDialogComponent, { width: '640px' }); }
-  edit(row: Attendant): void { this.dialog.open(AttendantFormDialogComponent, { width: '640px', data: row }); }
-  addPayment(row: Attendant): void { this.dialog.open(PaymentFormDialogComponent, { width: '560px', data: { attendant: row } }); }
+  add(): void { 
+    if (!this.canEdit()) return;
+    this.dialog.open(AttendantFormDialogComponent, { width: '640px' }); 
+  }
+  
+  edit(row: Attendant): void { 
+    if (!this.canEdit()) return;
+    this.dialog.open(AttendantFormDialogComponent, { width: '640px', data: row }); 
+  }
+  
+  addPayment(row: Attendant): void { 
+    if (!this.canEdit()) return;
+    this.dialog.open(PaymentFormDialogComponent, { width: '560px', data: { attendant: row } }); 
+  }
 }

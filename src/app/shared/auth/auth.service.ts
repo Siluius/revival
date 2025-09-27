@@ -1,8 +1,8 @@
 import { Injectable, inject } from '@angular/core';
-import { Auth, authState, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, updateProfile, User } from '@angular/fire/auth';
+import { Auth, authState, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, updateProfile, User, GoogleAuthProvider, signInWithPopup } from '@angular/fire/auth';
 import { Firestore, doc, docData, setDoc, serverTimestamp } from '@angular/fire/firestore';
 import { Router } from '@angular/router';
-import { firstValueFrom, map } from 'rxjs';
+import { firstValueFrom, map, Observable } from 'rxjs';
 import { AppUserProfile } from './auth.interfaces';
 import { ActivitiesService } from '../activities/activities.service';
 
@@ -40,17 +40,51 @@ export class AuthService {
     return cred.user;
   }
 
+  async loginWithGoogle(): Promise<User> {
+    const provider = new GoogleAuthProvider();
+    const cred = await signInWithPopup(this.auth, provider);
+    
+    // Create or update user profile in Firestore
+    const userProfile: AppUserProfile = {
+      uid: cred.user.uid,
+      email: cred.user.email!,
+      displayName: cred.user.displayName,
+      role: 'viewer',
+      preferences: { theme: 'light' }
+    };
+    
+    await setDoc(doc(this.firestore, `users/${cred.user.uid}`), userProfile, { merge: true });
+    await this.activities.logAuth('login', { uid: cred.user.uid, email: cred.user.email, displayName: cred.user.displayName ?? null });
+    
+    return cred.user;
+  }
+
   async logout(): Promise<void> {
-    const user = await this.getCurrentUser();
-    await signOut(this.auth);
-    if (user) {
-      await this.activities.logAuth('logout', { uid: user.uid, email: user.email, displayName: user.displayName ?? null });
+    try {
+      const user = await this.getCurrentUser();
+      await signOut(this.auth);
+      
+      // Log the logout activity, but don't wait for it to complete
+      if (user) {
+        this.activities.logAuth('logout', { 
+          uid: user.uid, 
+          email: user.email, 
+          displayName: user.displayName ?? null 
+        }).catch(error => {
+          console.warn('Failed to log logout activity:', error);
+        });
+      }
+      
+      await this.router.navigateByUrl('/login');
+    } catch (error) {
+      console.error('Logout error:', error);
+      // Even if there's an error, try to navigate to login
+      await this.router.navigateByUrl('/login');
     }
-    await this.router.navigateByUrl('/login');
   }
 
   getUserProfile$(uid: string) {
-    return docData(doc(this.firestore, `users/${uid}`)) as unknown as AppUserProfile;
+    return docData(doc(this.firestore, `users/${uid}`)) as unknown as Observable<AppUserProfile>;
   }
 
   async getCurrentUser(): Promise<User | null> {

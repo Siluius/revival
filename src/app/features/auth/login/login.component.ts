@@ -7,11 +7,12 @@ import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
+import { MatDividerModule } from '@angular/material/divider';
 
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterLink, MatCardModule, MatFormFieldModule, MatInputModule, MatButtonModule],
+  imports: [CommonModule, ReactiveFormsModule, RouterLink, MatCardModule, MatFormFieldModule, MatInputModule, MatButtonModule, MatDividerModule],
   templateUrl: './login.component.html',
   styleUrls: ['./login.component.scss']
 })
@@ -63,7 +64,7 @@ export class LoginComponent {
     try {
       const { email, password } = this.form.getRawValue();
       await this.auth.login(email!, password!);
-      await this.router.navigateByUrl('/app/dashboard');
+      await this.router.navigateByUrl('/company');
     } catch (e: any) {
       const code: string | undefined = e?.code;
       switch (code) {
@@ -93,6 +94,23 @@ export class LoginComponent {
       }
       this.form.markAllAsTouched();
       this.error.set(e?.message ?? 'Login failed');
+    } finally {
+      this.loading.set(false);
+    }
+  }
+
+  async loginWithGoogle(): Promise<void> {
+    if (this.loading()) return;
+    this.error.set(null);
+    this.clearFirebaseErrors();
+    this.loading.set(true);
+    
+    try {
+      await this.auth.loginWithGoogle();
+      await this.router.navigateByUrl('/company');
+    } catch (e: any) {
+      console.error('Google login error:', e);
+      this.error.set(e?.message ?? 'Google login failed');
     } finally {
       this.loading.set(false);
     }

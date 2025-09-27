@@ -1,0 +1,47 @@
+<div class="calendar-container">
+  <mat-card>
+    <mat-toolbar>
+      <span>Payment Calendar</span>
+      <span class="spacer"></span>
+      <button mat-icon-button (click)="refreshData()">
+        <mat-icon>refresh</mat-icon>
+      </button>
+    </mat-toolbar>
+
+    <div class="calendar-navigation">
+      <button mat-icon-button (click)="previousMonth()">
+        <mat-icon>chevron_left</mat-icon>
+      </button>
+      <span class="month-year">{{ currentMonth() | date:'MMMM yyyy' }}</span>
+      <button mat-icon-button (click)="nextMonth()">
+        <mat-icon>chevron_right</mat-icon>
+      </button>
+    </div>
+
+    <div class="calendar-grid" *ngIf="!loading()">
+      <div class="calendar-header">
+        <div class="day-header" *ngFor="let day of weekDays">{{ day }}</div>
+      </div>
+      <div class="calendar-body">
+        <div 
+          class="calendar-day" 
+          *ngFor="let day of calendarDays()"
+          [class.has-payments]="day.hasPayments"
+          [class.selected]="day.isSelected"
+          [class.today]="day.isToday"
+          (click)="selectDate(day.date)"
+        >
+          <div class="day-number">{{ day.date.getDate() }}</div>
+          <div class="day-summary" *ngIf="day.hasPayments">
+            <mat-chip color="primary" size="small">${{ day.totalUSD | number:'1.0-0' }}</mat-chip>
+            <mat-chip color="accent" size="small" *ngIf="day.totalNIO > 0">C${{ day.totalNIO | number:'1.0-0' }}</mat-chip>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="loading-container" *ngIf="loading()">
+      <mat-spinner></mat-spinner>
+    </div>
+  </mat-card>
+</div>

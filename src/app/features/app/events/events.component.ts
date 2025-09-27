@@ -11,6 +11,7 @@ import { AppEvent } from '../../../shared/events/events.interfaces';
 import { EventFormDialogComponent } from './event-form-dialog.component';
 import { AgGridModule } from 'ag-grid-angular';
 import { ColDef, GridApi, GridOptions, ICellRendererParams, ModuleRegistry, AllCommunityModule, themeQuartz } from 'ag-grid-community';
+import { CompanyService } from '../../../shared/company/company.service';
 
 ModuleRegistry.registerModules([AllCommunityModule]);
 
@@ -23,12 +24,19 @@ ModuleRegistry.registerModules([AllCommunityModule]);
 export class EventsComponent {
   private readonly service = inject(EventsService);
   private readonly dialog = inject(MatDialog);
+  private readonly company = inject(CompanyService);
 
   protected gridApi?: GridApi;
   protected readonly theme = themeQuartz;
 
   protected readonly search = signal('');
   protected readonly allEvents = toSignal(this.service.getAll$(), { initialValue: [] as AppEvent[] });
+
+  protected readonly companyRole = toSignal(this.company.getMyCurrentCompanyRole$(), { initialValue: null });
+  protected readonly canEdit = computed(() => {
+    const role = this.companyRole();
+    return role === 'editor' || role === 'admin';
+  });
 
   protected readonly rowData = computed(() => {
     const term = this.search().toLowerCase().trim();
@@ -41,7 +49,17 @@ export class EventsComponent {
     { field: 'costUSD', headerName: 'Cost (USD)', sortable: true, filter: 'agNumberColumnFilter', valueFormatter: p => (p.value ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }), width: 140 },
     { headerName: 'Actions', cellRenderer: (_: ICellRendererParams) => {
         const e = document.createElement('div');
-        const btn = document.createElement('button'); btn.textContent = 'Edit'; btn.className = 'mat-mdc-button'; btn.onclick = () => this.edit((_.data as AppEvent)); e.appendChild(btn); return e;
+        
+        // Only show edit button if user can edit
+        if (this.canEdit()) {
+          const btn = document.createElement('button'); 
+          btn.textContent = 'Edit'; 
+          btn.className = 'mat-mdc-button'; 
+          btn.onclick = () => this.edit((_.data as AppEvent)); 
+          e.appendChild(btn);
+        }
+        
+        return e;
       }, width: 120 }
   ];
 
@@ -58,6 +76,13 @@ export class EventsComponent {
 
   onGridReady(event: any) { this.gridApi = event.api as GridApi; this.gridApi.setGridOption('quickFilterText', this.search()); }
 
-  add(): void { this.dialog.open(EventFormDialogComponent, { width: '480px' }); }
-  edit(evt: AppEvent): void { this.dialog.open(EventFormDialogComponent, { width: '480px', data: evt }); }
+  add(): void { 
+    if (!this.canEdit()) return;
+    this.dialog.open(EventFormDialogComponent, { width: '480px' }); 
+  }
+  
+  edit(evt: AppEvent): void { 
+    if (!this.canEdit()) return;
+    this.dialog.open(EventFormDialogComponent, { width: '480px', data: evt }); 
+  }
 }

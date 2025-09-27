@@ -12,6 +12,7 @@ import { OrganizationFormDialogComponent } from './organization-form-dialog.comp
 import { IfCanEditDirective } from '../../../shared/auth/if-can-edit.directive';
 import { AgGridModule } from 'ag-grid-angular';
 import { ColDef, GridApi, GridOptions, ICellRendererParams, ModuleRegistry, AllCommunityModule, themeQuartz } from 'ag-grid-community';
+import { CompanyService } from '../../../shared/company/company.service';
 
 ModuleRegistry.registerModules([AllCommunityModule]);
 
@@ -24,12 +25,19 @@ ModuleRegistry.registerModules([AllCommunityModule]);
 export class OrganizationsComponent {
   private readonly service = inject(OrganizationsService);
   private readonly dialog = inject(MatDialog);
+  private readonly company = inject(CompanyService);
 
   protected gridApi?: GridApi;
   protected readonly theme = themeQuartz;
 
   protected readonly search = signal('');
   protected readonly allOrganizations = toSignal(this.service.getAll$(), { initialValue: [] as Organization[] });
+
+  protected readonly companyRole = toSignal(this.company.getMyCurrentCompanyRole$(), { initialValue: null });
+  protected readonly canEdit = computed(() => {
+    const role = this.companyRole();
+    return role === 'editor' || role === 'admin';
+  });
 
   protected readonly rowData = computed(() => {
     const term = this.search().toLowerCase().trim();
@@ -42,7 +50,17 @@ export class OrganizationsComponent {
     { field: 'description', headerName: 'Description', sortable: true, filter: true, flex: 2 },
     { headerName: 'Actions', cellRenderer: (_: ICellRendererParams) => {
         const e = document.createElement('div');
-        const btn = document.createElement('button'); btn.textContent = 'Edit'; btn.className = 'mat-mdc-button'; btn.onclick = () => this.edit((_.data as Organization)); e.appendChild(btn); return e;
+        
+        // Only show edit button if user can edit
+        if (this.canEdit()) {
+          const btn = document.createElement('button'); 
+          btn.textContent = 'Edit'; 
+          btn.className = 'mat-mdc-button'; 
+          btn.onclick = () => this.edit((_.data as Organization)); 
+          e.appendChild(btn);
+        }
+        
+        return e;
       }, width: 120 }
   ];
 
@@ -59,6 +77,13 @@ export class OrganizationsComponent {
 
   onGridReady(event: any) { this.gridApi = event.api as GridApi; this.gridApi.setGridOption('quickFilterText', this.search()); }
 
-  add(): void { this.dialog.open(OrganizationFormDialogComponent, { width: '480px' }); }
-  edit(org: Organization): void { this.dialog.open(OrganizationFormDialogComponent, { width: '480px', data: org }); }
+  add(): void { 
+    if (!this.canEdit()) return;
+    this.dialog.open(OrganizationFormDialogComponent, { width: '480px' }); 
+  }
+  
+  edit(org: Organization): void { 
+    if (!this.canEdit()) return;
+    this.dialog.open(OrganizationFormDialogComponent, { width: '480px', data: org }); 
+  }
 }

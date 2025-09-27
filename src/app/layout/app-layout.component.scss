@@ -30,6 +30,89 @@
 a { text-decoration: none; color: inherit; }
 a.active { font-weight: 600; }
 
+/* Theme menu styles */
+button[mat-menu-item].selected {
+  background-color: rgba(25, 118, 210, 0.12);
+  font-weight: 500;
+}
+
+button[mat-menu-item].selected mat-icon:last-child {
+  color: #1976d2;
+}
+
+/* Theme button - icon only with tooltip */
+button[mat-icon-button][matMenuTriggerFor] {
+  color: inherit;
+  transition: color 0.2s ease;
+}
+
+button[mat-icon-button][matMenuTriggerFor]:hover {
+  color: #1976d2;
+}
+
+/* User menu button */
+.user-menu-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 120px;
+  padding: 8px 12px;
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
+}
+
+.user-menu-button:hover {
+  background-color: rgba(0, 0, 0, 0.04);
+}
+
+.user-name {
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 500;
+}
+
+.dropdown-icon {
+  font-size: 18px;
+  height: 18px;
+  width: 18px;
+  transition: transform 0.2s ease;
+}
+
+.user-menu-button[aria-expanded="true"] .dropdown-icon {
+  transform: rotate(180deg);
+}
+
+/* User menu items */
+button[mat-menu-item] {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 16px;
+}
+
+button[mat-menu-item] mat-icon {
+  font-size: 20px;
+  height: 20px;
+  width: 20px;
+}
+
+button[mat-menu-item] span {
+  font-weight: 400;
+}
+
+/* Disabled logout button */
+button[mat-menu-item][disabled] {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Menu divider */
+mat-divider {
+  margin: 4px 0;
+}
+
 .loading-overlay { position: fixed; inset: 0; z-index: 2000; background: rgba(0,0,0,0.28); display: flex; align-items: center; justify-content: center; backdrop-filter: blur(1px); }
 .spinner { width: 64px; height: 64px; border-radius: 50%; border: 6px solid rgba(255,255,255,0.4); border-top-color: #1976d2; animation: spin 1s linear infinite; box-shadow: 0 0 0 1px rgba(0,0,0,0.06) inset; }
 @keyframes spin { to { transform: rotate(360deg); } }

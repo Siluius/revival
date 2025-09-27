@@ -5,10 +5,6 @@
         <mat-icon>dashboard</mat-icon>
         <span class="label">Dashboard</span>
       </a>
-      <a mat-list-item routerLink="/app/preferences">
-        <mat-icon>settings</mat-icon>
-        <span class="label">Preferences</span>
-      </a>
       <a mat-list-item routerLink="/app/organizations">
         <mat-icon>business</mat-icon>
         <span class="label">Organizations</span>
@@ -20,6 +16,10 @@
       <a mat-list-item routerLink="/app/attendants">
         <mat-icon>groups</mat-icon>
         <span class="label">Attendants</span>
+      </a>
+      <a mat-list-item routerLink="/app/payment-audits">
+        <mat-icon>account_balance</mat-icon>
+        <span class="label">Payment Audits</span>
       </a>
       <a mat-list-item routerLink="/app/activities">
         <mat-icon>history</mat-icon>
@@ -40,11 +40,43 @@
     <span>Revival</span>
     <span class="spacer"></span>
     <a mat-button routerLink="/company">Manage Companies</a>
-    <mat-button-toggle-group [value]="theme()" (change)="setTheme($event.value)">
-      <mat-button-toggle value="theme-light">Light</mat-button-toggle>
-      <mat-button-toggle value="theme-dark">Dark</mat-button-toggle>
-    </mat-button-toggle-group>
-    <button mat-button (click)="logout()">Logout</button>
+    
+    <button mat-icon-button [matMenuTriggerFor]="themeMenu" [matTooltip]="'Theme: ' + getCurrentThemeText()">
+      <mat-icon>{{ theme() === 'theme-dark' ? 'dark_mode' : 'light_mode' }}</mat-icon>
+    </button>
+    <mat-menu #themeMenu="matMenu">
+      <button mat-menu-item (click)="setTheme('theme-light')" [class.selected]="theme() === 'theme-light'">
+        <mat-icon>light_mode</mat-icon>
+        <span>Light</span>
+        @if (theme() === 'theme-light') {
+          <mat-icon>check</mat-icon>
+        }
+      </button>
+      <button mat-menu-item (click)="setTheme('theme-dark')" [class.selected]="theme() === 'theme-dark'">
+        <mat-icon>dark_mode</mat-icon>
+        <span>Dark</span>
+        @if (theme() === 'theme-dark') {
+          <mat-icon>check</mat-icon>
+        }
+      </button>
+    </mat-menu>
+    
+    <button mat-button [matMenuTriggerFor]="userMenu" class="user-menu-button">
+      <mat-icon>account_circle</mat-icon>
+      <span class="user-name">{{ getUserDisplayName() }}</span>
+      <mat-icon class="dropdown-icon">keyboard_arrow_down</mat-icon>
+    </button>
+    <mat-menu #userMenu="matMenu">
+      <button mat-menu-item (click)="goToPreferences()">
+        <mat-icon>settings</mat-icon>
+        <span>Preferences</span>
+      </button>
+      <mat-divider></mat-divider>
+      <button mat-menu-item (click)="logout()" [disabled]="loggingOut()">
+        <mat-icon>logout</mat-icon>
+        <span>Logout</span>
+      </button>
+    </mat-menu>
   </mat-toolbar>
   <main class="content">
     <router-outlet />

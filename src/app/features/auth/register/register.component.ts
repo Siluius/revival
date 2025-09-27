@@ -7,11 +7,12 @@ import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
+import { MatDividerModule } from '@angular/material/divider';
 
 @Component({
   selector: 'app-register',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterLink, MatCardModule, MatFormFieldModule, MatInputModule, MatButtonModule],
+  imports: [CommonModule, ReactiveFormsModule, RouterLink, MatCardModule, MatFormFieldModule, MatInputModule, MatButtonModule, MatDividerModule],
   templateUrl: './register.component.html',
   styleUrls: ['./register.component.scss']
 })
@@ -35,9 +36,23 @@ export class RegisterComponent {
     try {
       const { email, password, displayName } = this.form.getRawValue();
       await this.auth.register(email!, password!, displayName ?? undefined);
-      await this.router.navigateByUrl('/app/dashboard');
+      await this.router.navigateByUrl('/company');
     } catch (e: any) {
       this.error.set(e?.message ?? 'Registration failed');
+    } finally {
+      this.loading.set(false);
+    }
+  }
+
+  async loginWithGoogle(): Promise<void> {
+    if (this.loading()) return;
+    this.error.set(null);
+    this.loading.set(true);
+    try {
+      await this.auth.loginWithGoogle();
+      await this.router.navigateByUrl('/company');
+    } catch (e: any) {
+      this.error.set(e?.message ?? 'Google login failed');
     } finally {
       this.loading.set(false);
     }

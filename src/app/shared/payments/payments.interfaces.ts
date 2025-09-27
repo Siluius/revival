@@ -7,8 +7,9 @@ export interface Payment {
   amountUSD: number; // stored normalized in USD
   originalAmount?: number | null; // if original currency is NIO, capture raw amount
   originalCurrency?: CurrencyCode | null; // original currency, default USD
-  createdAt?: unknown;
-  updatedAt?: unknown;
+  createdAt?: Date | any;
+  updatedAt?: Date | any;
+  recordedBy?: string;
 }
 
 export type NewPayment = {

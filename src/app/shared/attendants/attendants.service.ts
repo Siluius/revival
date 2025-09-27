@@ -12,7 +12,8 @@ export class AttendantsService {
 
   getAll$(): Observable<Attendant[]> {
     const companyId = this.company.selectedCompanyId();
-    const q = companyId ? query(this.collectionRef, where('companyId', '==', companyId), orderBy('lastName'), orderBy('firstName')) : query(this.collectionRef, orderBy('lastName'), orderBy('firstName'));
+    console.log('AttendantsService - Company ID:', companyId);
+    const q = companyId ? query(this.collectionRef, where('companyId', '==', companyId)) : this.collectionRef;
     return collectionData(q, { idField: 'id' }) as Observable<Attendant[]>;
   }
 

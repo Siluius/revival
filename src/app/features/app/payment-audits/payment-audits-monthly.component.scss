@@ -1,0 +1,34 @@
+.monthly-audit-container {
+  padding: 16px;
+}
+
+.monthly-summary {
+  display: flex;
+  gap: 16px;
+  margin: 16px 0;
+}
+
+.summary-card {
+  flex: 1;
+  text-align: center;
+}
+
+.amount {
+  font-size: 2rem;
+  font-weight: bold;
+  color: #1976d2;
+}
+
+.daily-breakdown {
+  margin-top: 24px;
+}
+
+.loading-container {
+  display: flex;
+  justify-content: center;
+  padding: 32px;
+}
+
+.spacer {
+  flex: 1 1 auto;
+}

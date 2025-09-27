@@ -22,9 +22,29 @@ export class CompanyService {
   private readonly ngZone = inject(NgZone);
   readonly selectedCompanyId = signal<string | null>(localStorage.getItem('companyId') || null);
 
+  constructor() {
+    console.log('CompanyService - Constructor called');
+    console.log('CompanyService - Current selectedCompanyId:', this.selectedCompanyId());
+    
+    // Sync signal with localStorage on initialization
+    const storedId = localStorage.getItem('companyId');
+    if (storedId && !this.selectedCompanyId()) {
+      console.log('CompanyService - Syncing signal with localStorage:', storedId);
+      this.selectedCompanyId.set(storedId);
+    }
+  }
+
   setSelectedCompanyId(id: string | null): void {
+    console.log('CompanyService - Setting company ID to:', id);
     this.selectedCompanyId.set(id);
-    if (id) localStorage.setItem('companyId', id); else localStorage.removeItem('companyId');
+    if (id) {
+      localStorage.setItem('companyId', id);
+      console.log('CompanyService - Saved to localStorage:', id);
+    } else {
+      localStorage.removeItem('companyId');
+      console.log('CompanyService - Removed from localStorage');
+    }
+    console.log('CompanyService - Current selectedCompanyId after set:', this.selectedCompanyId());
   }
 
   getMyCompanies$(): Observable<Company[]> {
@@ -67,6 +87,15 @@ export class CompanyService {
     if (!companyId) return of([] as CompanyMembership[]);
     const q = query(collection(this.firestore, 'companyMemberships'), where('companyId', '==', companyId));
     return collectionData(q, { idField: 'id' }) as unknown as Observable<CompanyMembership[]>;
+  }
+
+  getMyCurrentCompanyRole$(): Observable<'viewer' | 'editor' | 'admin' | null> {
+    const companyId = this.selectedCompanyId();
+    if (!companyId) return of(null);
+    
+    return this.getMyMembership$(companyId).pipe(
+      map(membership => membership?.role ?? null)
+    );
   }
 
   async createInvitation(email: string, role: 'viewer' | 'editor' | 'admin' = 'viewer'): Promise<string> {

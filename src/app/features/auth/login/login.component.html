@@ -25,6 +25,17 @@
           <span class="spacer"></span>
           <a routerLink="/register">Register</a>
         </mat-card-actions>
+        
+        <mat-divider class="divider">
+          <span class="divider-text">or</span>
+        </mat-divider>
+        
+        <div class="google-login">
+          <button mat-stroked-button type="button" (click)="loginWithGoogle()" [disabled]="loading()" class="google-button">
+            <img src="https://developers.google.com/identity/images/g-logo.png" alt="Google" class="google-logo">
+            Continue with Google
+          </button>
+        </div>
       </form>
     </mat-card-content>
   </mat-card>

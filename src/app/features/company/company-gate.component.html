@@ -1,13 +1,19 @@
 <div class="content">
-  <h2>Select a company</h2>
+  <div class="header">
+    <h2>Select a company</h2>
+    <button mat-stroked-button color="warn" (click)="logout()">
+      <mat-icon>logout</mat-icon>
+      Logout
+    </button>
+  </div>
   <mat-nav-list *ngIf="companies().length > 0">
     <a mat-list-item *ngFor="let c of companies()" (click)="select(c.id)">{{ c.name }}</a>
   </mat-nav-list>
 
   <h3>Pending invitations</h3>
-  <mat-nav-list *ngIf="invites().length > 0; else noInvites">
-    <div mat-list-item *ngFor="let i of invites()" style="display:flex; align-items:center; gap:8px;">
-      <span>{{ i.companyId }} — {{ i.role }}</span>
+  <mat-nav-list *ngIf="invitesWithCompanyNames().length > 0; else noInvites">
+    <div mat-list-item *ngFor="let i of invitesWithCompanyNames()" style="display:flex; align-items:center; gap:8px;">
+      <span>{{ i.companyName }} — {{ i.role }}</span>
       <span class="spacer"></span>
       <button mat-stroked-button color="primary" (click)="accept(i.id)">Accept</button>
       <button mat-button color="warn" (click)="decline(i.id)">Decline</button>
