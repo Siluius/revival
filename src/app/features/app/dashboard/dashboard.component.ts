@@ -24,7 +24,10 @@ export class DashboardComponent {
   protected readonly paymentsCount = toSignal(collectionData(collection(this.firestore, 'payments')).pipe(), { initialValue: [] as any[] });
 
   @ViewChild('chart', { static: false }) chartEl?: ElementRef<HTMLDivElement>;
+  @ViewChild('tshirtChart', { static: false }) tshirtChartEl?: ElementRef<HTMLDivElement>;
   private chart?: Highcharts.Chart;
+  private tshirtChart?: Highcharts.Chart;
+  
   protected chartOptions: Highcharts.Options = {
     chart: { type: 'pie' },
     title: { text: 'Attendants by Status per Event' },
@@ -33,6 +36,25 @@ export class DashboardComponent {
         allowPointSelect: true,
         cursor: 'pointer',
         dataLabels: { enabled: true, format: '{point.name}: {point.y}' }
+      }
+    },
+    series: []
+  };
+
+  protected tshirtChartOptions: Highcharts.Options = {
+    chart: { type: 'column' },
+    title: { text: 'T-Shirt Size Distribution' },
+    xAxis: {
+      categories: ['18', 'S', 'M', 'L', 'XL'],
+      title: { text: 'T-Shirt Size' }
+    },
+    yAxis: {
+      title: { text: 'Number of Attendants' },
+      allowDecimals: false
+    },
+    plotOptions: {
+      column: {
+        dataLabels: { enabled: true }
       }
     },
     series: []
@@ -69,7 +91,6 @@ export class DashboardComponent {
         const pieSeries: Highcharts.SeriesPieOptions = {
           type: 'pie',
           name: 'Attendants',
-          colorByPoint: true,
           data: pieData
         };
 
@@ -84,6 +105,9 @@ export class DashboardComponent {
           paid: (series[2].data as number[])[idx] ?? 0,
           cancelled: (series[3].data as number[])[idx] ?? 0
         }));
+
+        // Build t-shirt size distribution data
+        this.buildTShirtSizeChart(atts);
       });
     });
   }
@@ -95,6 +119,35 @@ export class DashboardComponent {
     } else {
       this.chart.update(this.chartOptions as Highcharts.Options, true, true);
     }
+  }
+
+  private renderTShirtChart(): void {
+    if (!this.tshirtChartEl) return;
+    if (!this.tshirtChart) {
+      this.tshirtChart = Highcharts.chart(this.tshirtChartEl.nativeElement, this.tshirtChartOptions);
+    } else {
+      this.tshirtChart.update(this.tshirtChartOptions as Highcharts.Options, true, true);
+    }
+  }
+
+  private buildTShirtSizeChart(attendants: any[]): void {
+    const tshirtSizes = ['18', 'S', 'M', 'L', 'XL'];
+    const sizeCounts = tshirtSizes.map(size => {
+      return attendants.filter(att => att.tShirtSize === size).length;
+    });
+
+    const tshirtSeries: Highcharts.SeriesColumnOptions = {
+      type: 'column',
+      name: 'Attendants',
+      data: sizeCounts,
+      color: '#1976d2'
+    };
+
+    this.tshirtChartOptions = { 
+      ...this.tshirtChartOptions, 
+      series: [tshirtSeries] 
+    };
+    this.renderTShirtChart();
   }
 
   get totalEvents(): number { return this.eventsCount().length; }

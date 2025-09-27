@@ -1,12 +1,31 @@
 <div class="toolbar">
-  <mat-form-field appearance="outline" class="w-50">
-    <mat-label>Invite by email</mat-label>
-    <input matInput [value]="inviteEmail()" (input)="inviteEmail.set($any($event.target).value)" />
-  </mat-form-field>
-  <span class="spacer"></span>
-  <ng-container *appIfAdmin>
-    <button mat-flat-button color="primary" (click)="invite()">Invite</button>
-  </ng-container>
+  <form [formGroup]="inviteForm" (ngSubmit)="invite()" class="row" style="flex: 1;">
+    <mat-form-field appearance="outline" class="w-50">
+      <mat-label>Email</mat-label>
+      <input matInput formControlName="email" type="email" placeholder="user@example.com" />
+      <mat-error *ngIf="inviteForm.get('email')?.invalid && inviteForm.get('email')?.touched">
+        <span *ngIf="inviteForm.get('email')?.errors?.['required']">Email is required</span>
+        <span *ngIf="inviteForm.get('email')?.errors?.['email']">Please enter a valid email</span>
+      </mat-error>
+    </mat-form-field>
+    
+    <mat-form-field appearance="outline" class="w-25">
+      <mat-label>Role</mat-label>
+      <mat-select formControlName="role">
+        <mat-option value="viewer">Viewer</mat-option>
+        <mat-option value="editor">Editor</mat-option>
+        <mat-option value="admin">Admin</mat-option>
+      </mat-select>
+    </mat-form-field>
+    
+    <span class="spacer"></span>
+    <ng-container *appIfAdmin>
+      <button mat-flat-button color="primary" type="submit" [disabled]="inviteForm.invalid || loading.active() > 0">
+        <span *ngIf="loading.active() > 0">Sending...</span>
+        <span *ngIf="loading.active() === 0">Invite</span>
+      </button>
+    </ng-container>
+  </form>
 </div>
 
 <ag-grid-angular style="height: calc(100vh - 260px); width: 100%;" [gridOptions]="gridOptions" [columnDefs]="columnDefs" [rowData]="rows()" [theme]="theme"></ag-grid-angular>

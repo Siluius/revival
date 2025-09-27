@@ -1,16 +1,19 @@
 import { Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { CompanyService } from '../../shared/company/company.service';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { MatSelectModule } from '@angular/material/select';
+import { MatSnackBarModule, MatSnackBar } from '@angular/material/snack-bar';
 import { IfAdminDirective } from '../../shared/auth/if-can-admin.directive';
 import { Firestore, doc, docData } from '@angular/fire/firestore';
 import { combineLatest, map, of, switchMap } from 'rxjs';
 import { AgGridModule } from 'ag-grid-angular';
 import { ColDef, GridApi, GridOptions, ICellRendererParams, ModuleRegistry, AllCommunityModule, themeQuartz } from 'ag-grid-community';
+import { LoadingService } from '../../shared/loading/loading.service';
 
 ModuleRegistry.registerModules([AllCommunityModule]);
 
@@ -19,18 +22,25 @@ interface MembershipRow { userId: string; role: 'viewer' | 'editor' | 'admin'; e
 @Component({
   selector: 'app-company-users',
   standalone: true,
-  imports: [CommonModule, MatFormFieldModule, MatInputModule, MatButtonModule, MatSelectModule, IfAdminDirective, AgGridModule],
+  imports: [CommonModule, ReactiveFormsModule, MatFormFieldModule, MatInputModule, MatButtonModule, MatSelectModule, MatSnackBarModule, IfAdminDirective, AgGridModule],
   templateUrl: './company-users.component.html'
 })
 export class CompanyUsersComponent {
   private readonly company = inject(CompanyService);
   private readonly firestore = inject(Firestore);
+  private readonly fb = inject(FormBuilder);
+  private readonly snackBar = inject(MatSnackBar);
+  protected readonly loading = inject(LoadingService);
 
   protected gridApi?: GridApi;
   protected readonly theme = themeQuartz;
 
   protected readonly memberships = toSignal(this.company.getMembershipsForCurrentCompany$(), { initialValue: [] as any[] });
-  protected readonly inviteEmail = signal('');
+  
+  protected readonly inviteForm = this.fb.group({
+    email: ['', [Validators.required, Validators.email]],
+    role: ['viewer' as 'viewer' | 'editor' | 'admin', [Validators.required]]
+  });
 
   protected readonly rows = toSignal(
     this.company.getMembershipsForCurrentCompany$().pipe(
@@ -89,13 +99,42 @@ export class CompanyUsersComponent {
   onGridReady(event: any) { this.gridApi = event.api as GridApi; }
 
   async invite(): Promise<void> {
-    const email = this.inviteEmail().trim();
-    if (!email) return;
-    await this.company.addUserToCurrentCompanyByEmail(email, 'viewer');
-    this.inviteEmail.set('');
+    if (this.inviteForm.invalid) {
+      this.inviteForm.markAllAsTouched();
+      return;
+    }
+
+    const { email, role } = this.inviteForm.getRawValue();
+    
+    await this.loading.wrap(async () => {
+      try {
+        await this.company.addUserToCurrentCompanyByEmail(email!, role!);
+        this.snackBar.open(`Invitation sent to ${email}`, 'Close', { duration: 3000 });
+        this.inviteForm.reset({ email: '', role: 'viewer' });
+      } catch (error: any) {
+        console.error('Invite error:', error);
+        this.snackBar.open(
+          error?.message || 'Failed to send invitation. Please try again.',
+          'Close',
+          { duration: 5000 }
+        );
+      }
+    });
   }
 
   async changeRole(userId: string, role: 'viewer' | 'editor' | 'admin'): Promise<void> {
-    await this.company.updateMembershipRole(userId, role);
+    await this.loading.wrap(async () => {
+      try {
+        await this.company.updateMembershipRole(userId, role);
+        this.snackBar.open('User role updated successfully', 'Close', { duration: 3000 });
+      } catch (error: any) {
+        console.error('Role update error:', error);
+        this.snackBar.open(
+          error?.message || 'Failed to update user role. Please try again.',
+          'Close',
+          { duration: 5000 }
+        );
+      }
+    });
   }
 }

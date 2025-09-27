@@ -31,14 +31,6 @@
     </mat-select>
   </mat-form-field>
 
-  <mat-form-field appearance="outline">
-    <mat-label>In Group</mat-label>
-    <mat-select [value]="inGroup()" (selectionChange)="inGroup.set($event.value)">
-      <mat-option value="all">All</mat-option>
-      <mat-option [value]="true">Yes</mat-option>
-      <mat-option [value]="false">No</mat-option>
-    </mat-select>
-  </mat-form-field>
 
   <span class="spacer"></span>
   <button mat-flat-button color="primary" (click)="add()">

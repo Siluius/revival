@@ -26,7 +26,6 @@ export class AttendantsService {
       ...data,
       companyId: this.company.selectedCompanyId(),
       paymentStatus: 'unpaid',
-      alreadyInGroup: false,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp()
     });

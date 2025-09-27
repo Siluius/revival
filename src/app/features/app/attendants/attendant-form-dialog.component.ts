@@ -11,7 +11,7 @@ import { MatNativeDateModule } from '@angular/material/core';
 import { MatIconModule } from '@angular/material/icon';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { AttendantsService } from '../../../shared/attendants/attendants.service';
-import { Attendant, Gender } from '../../../shared/attendants/attendants.interfaces';
+import { Attendant, Gender, TShirtSize } from '../../../shared/attendants/attendants.interfaces';
 import { OrganizationsService } from '../../../shared/organizations/organizations.service';
 import { Organization } from '../../../shared/organizations/organizations.interfaces';
 import { toSignal } from '@angular/core/rxjs-interop';
@@ -42,8 +42,8 @@ export class AttendantFormDialogComponent {
     phone: [''],
     dateOfBirth: [null as Date | null, [Validators.required]],
     gender: [null as Gender | null, [Validators.required]],
+    tShirtSize: [null as TShirtSize | null],
     organizationId: [null as string | null],
-    alreadyInGroup: [false as boolean]
   });
 
   constructor() {
@@ -61,8 +61,8 @@ export class AttendantFormDialogComponent {
         phone: (this.data as any).phone ?? '',
         dateOfBirth: dob,
         gender: this.data.gender ?? null,
+        tShirtSize: this.data.tShirtSize ?? null,
         organizationId: this.data.organizationId ?? null,
-        alreadyInGroup: (this.data as any).alreadyInGroup ?? false
       });
     }
   }
@@ -78,8 +78,8 @@ export class AttendantFormDialogComponent {
         phone: value.phone ?? '',
         dateOfBirth: value.dateOfBirth ?? null,
         gender: value.gender ?? null,
+        tShirtSize: value.tShirtSize ?? null,
         organizationId: value.organizationId ?? null,
-        alreadyInGroup: !!value.alreadyInGroup
       };
       if (this.data?.id) {
         await this.service.update(this.data.id, payload);

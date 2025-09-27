@@ -40,7 +40,6 @@ export class AttendantsComponent {
   protected readonly gender = signal<Gender | 'all'>('all');
   protected readonly organizationId = signal<string | 'all'>('all');
   protected readonly eventId = signal<string | 'all'>('all');
-  protected readonly inGroup = signal<boolean | 'all'>('all');
 
   protected readonly allAttendants = toSignal(this.service.getAll$(), { initialValue: [] as Attendant[] });
   protected readonly organizations = toSignal(this.orgService.getAll$(), { initialValue: [] as Organization[] });
@@ -59,10 +58,10 @@ export class AttendantsComponent {
     { field: 'firstName', headerName: 'First Name', sortable: true, filter: true, flex: 1 },
     { field: 'lastName', headerName: 'Last Name', sortable: true, filter: true, flex: 1 },
     { field: 'gender', headerName: 'Gender', sortable: true, filter: true, width: 120 },
+    { field: 'tShirtSize', headerName: 'T-Shirt Size', sortable: true, filter: true, width: 120 },
     { headerName: 'Age', valueGetter: (params: ValueGetterParams<Attendant>) => this.age(params.data as Attendant) ?? '-', sortable: true, width: 100 },
     { headerName: 'Organization', valueGetter: (params: ValueGetterParams<Attendant>) => (this.organizations().find((o: Organization) => o.id === (params.data as Attendant).organizationId)?.name ?? '-'), sortable: true, filter: true, flex: 1 },
     { headerName: 'Payment', valueGetter: (params: ValueGetterParams<Attendant>) => (params.data as Attendant).paymentStatus ?? 'unpaid', sortable: true, width: 120 },
-    { headerName: 'In Group', valueGetter: (params: ValueGetterParams<Attendant>) => ((params.data as Attendant)?.alreadyInGroup ? 'Yes' : 'No'), sortable: true, filter: true, width: 120 },
     { headerName: 'Event Payments (USD)', valueGetter: (params: ValueGetterParams<Attendant>) => this.eventId() !== 'all' ? (((params.data as Attendant).eventPayments?.[this.eventId()]?.totalUSD ?? 0)) : this.overallTotalUSD(params.data as Attendant), width: 160, sortable: true, valueFormatter: (p: ValueFormatterParams) => (Number(p.value) || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) },
     { headerName: 'Actions', cellRenderer: (params: ICellRendererParams) => {
         const e = document.createElement('div');
@@ -95,15 +94,13 @@ export class AttendantsComponent {
     const payment = this.paymentStatus();
     const orgId = this.organizationId();
     const evtId = this.eventId();
-    const inGroup = this.inGroup();
     const filtered = rows.filter(a => {
       const matchesTerm = !term || `${a.firstName} ${a.lastName}`.toLowerCase().includes(term) || (a.address ?? '').toLowerCase().includes(term);
       const matchesGender = gender === 'all' || a.gender === gender;
       const matchesOrg = orgId === 'all' || a.organizationId === orgId;
       const effectiveStatus: PaymentStatus | null = evtId === 'all' ? (a.paymentStatus ?? null) : (a.eventPayments?.[evtId]?.status ?? null);
       const matchesPayment = payment === 'all' || effectiveStatus === payment;
-      const matchesInGroup = inGroup === 'all' || Boolean(a.alreadyInGroup) === inGroup;
-      return matchesTerm && matchesGender && matchesPayment && matchesOrg && matchesInGroup;
+      return matchesTerm && matchesGender && matchesPayment && matchesOrg;
     });
     return filtered.sort((a, b) => `${a.lastName} ${a.firstName}`.localeCompare(`${b.lastName} ${b.firstName}`));
   }
