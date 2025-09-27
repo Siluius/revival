@@ -1,6 +1,7 @@
 export const environment = {
   production: false,
-  firebase: {
+  // TODO: Replace with your Firebase project configuration
+  firebase:{
     apiKey: "${FIREBASE_API_KEY}",
     authDomain: "${FIREBASE_AUTH_DOMAIN}",
     projectId: "${FIREBASE_PROJECT_ID}",
