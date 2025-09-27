@@ -140,6 +140,11 @@ export class PaymentAuditsMonthlyComponent implements OnInit, OnChanges {
     this.dateSelected.emit(row.originalDate);
   }
 
+  // Public method to get monthly summary for export
+  getMonthlySummaryForExport(): MonthlySummary[] {
+    return this.monthlySummary();
+  }
+
   private formatFirestoreTimestamp(timestamp: any): string {
     try {
       // Handle Firestore timestamp

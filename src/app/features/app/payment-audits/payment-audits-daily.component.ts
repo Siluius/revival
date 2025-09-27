@@ -157,6 +157,11 @@ export class PaymentAuditsDailyComponent implements OnInit, OnChanges {
     });
   }
 
+  // Public method to get audit rows for export
+  getAuditRowsForExport(): PaymentAuditRow[] {
+    return this.auditRows();
+  }
+
   private formatFirestoreTimestamp(timestamp: any): string {
     try {
       // Handle Firestore timestamp

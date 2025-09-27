@@ -1,4 +1,4 @@
-import { Component, inject, signal, computed } from '@angular/core';
+import { Component, inject, signal, computed, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatCardModule } from '@angular/material/card';
@@ -39,6 +39,9 @@ import { toSignal } from '@angular/core/rxjs-interop';
 export class PaymentAuditsComponent {
   private readonly company = inject(CompanyService);
   
+  @ViewChild(PaymentAuditsDailyComponent) dailyComponent!: PaymentAuditsDailyComponent;
+  @ViewChild(PaymentAuditsMonthlyComponent) monthlyComponent!: PaymentAuditsMonthlyComponent;
+  
   protected readonly selectedDate = signal<Date>(new Date());
   protected readonly selectedTab = signal<number>(0);
   protected readonly companyId = signal<string | null>(this.company.selectedCompanyId());
@@ -68,16 +71,98 @@ export class PaymentAuditsComponent {
     this.selectedDate.set(yesterday);
   }
 
-  exportToPDF(): void {
+  exportToCSV(): void {
     if (!this.canEdit()) return;
-    // TODO: Implement PDF export using jsPDF
-    console.log('Export to PDF for date:', this.selectedDate());
+    
+    const date = this.selectedDate();
+    const dateStr = date.toISOString().split('T')[0];
+    const filename = `payment-audits-${dateStr}.csv`;
+    
+    // Get data from the current tab
+    if (this.selectedTab() === 0) {
+      // Daily report - we'll need to get data from the daily component
+      this.exportDailyDataToCSV(filename);
+    } else {
+      // Monthly report - we'll need to get data from the monthly component
+      this.exportMonthlyDataToCSV(filename);
+    }
   }
 
-  exportToExcel(): void {
-    if (!this.canEdit()) return;
-    // TODO: Implement Excel export using xlsx
-    console.log('Export to Excel for date:', this.selectedDate());
+  private exportDailyDataToCSV(filename: string): void {
+    if (!this.dailyComponent) {
+      console.error('Daily component not available');
+      return;
+    }
+
+    const headers = ['Time', 'Attendant', 'Event', 'Amount (USD)', 'Original Amount', 'Original Currency', 'Recorded By'];
+    const csvContent = headers.join(',') + '\n';
+    
+    // Get real data from daily component
+    const auditRows = this.dailyComponent.getAuditRowsForExport();
+    console.log('Exporting daily data:', auditRows);
+    
+    if (auditRows.length === 0) {
+      const csvData = csvContent + 'No data available for this date\n';
+      this.downloadCSV(csvData, filename);
+      return;
+    }
+    
+    const rows = auditRows.map(row => [
+      row.time,
+      row.attendantName,
+      row.eventName,
+      row.amountUSD.toFixed(2),
+      row.originalAmount.toFixed(2),
+      row.originalCurrency,
+      row.recordedBy
+    ]);
+    
+    const csvData = csvContent + rows.map(row => row.join(',')).join('\n') + '\n';
+    this.downloadCSV(csvData, filename);
+  }
+
+  private exportMonthlyDataToCSV(filename: string): void {
+    if (!this.monthlyComponent) {
+      console.error('Monthly component not available');
+      return;
+    }
+
+    const headers = ['Date', 'Total Payments', 'Total Amount (USD)', 'Total Amount (NIO)', 'Active Payments', 'Deleted Payments'];
+    const csvContent = headers.join(',') + '\n';
+    
+    // Get real data from monthly component
+    const monthlyData = this.monthlyComponent.getMonthlySummaryForExport();
+    console.log('Exporting monthly data:', monthlyData);
+    
+    if (monthlyData.length === 0) {
+      const csvData = csvContent + 'No data available for this month\n';
+      this.downloadCSV(csvData, filename);
+      return;
+    }
+    
+    const rows = monthlyData.map(item => [
+      item.date,
+      item.paymentCount.toString(),
+      item.totalUSD.toFixed(2),
+      item.totalNIO.toFixed(2),
+      item.activePayments.toString(),
+      item.deletedPayments.toString()
+    ]);
+    
+    const csvData = csvContent + rows.map(row => row.join(',')).join('\n') + '\n';
+    this.downloadCSV(csvData, filename);
+  }
+
+  private downloadCSV(csvContent: string, filename: string): void {
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', filename);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   }
 
   onDateSelected(date: Date): void {
