@@ -43,6 +43,7 @@ export class PaymentAuditsComponent {
   @ViewChild(PaymentAuditsMonthlyComponent) monthlyComponent!: PaymentAuditsMonthlyComponent;
   
   protected readonly selectedDate = signal<Date>(new Date());
+  protected readonly selectedMonth = signal<Date>(new Date());
   protected readonly selectedTab = signal<number>(0);
   protected readonly companyId = signal<string | null>(this.company.selectedCompanyId());
 
@@ -55,6 +56,11 @@ export class PaymentAuditsComponent {
   protected get validSelectedDate(): Date {
     const date = this.selectedDate();
     return date && date instanceof Date && !isNaN(date.getTime()) ? date : new Date();
+  }
+
+  protected get validSelectedMonth(): Date {
+    const month = this.selectedMonth();
+    return month && month instanceof Date && !isNaN(month.getTime()) ? month : new Date();
   }
 
   onDateChange(event: any): void {
@@ -71,19 +77,41 @@ export class PaymentAuditsComponent {
     this.selectedDate.set(yesterday);
   }
 
+  onMonthChange(event: any): void {
+    this.selectedMonth.set(event.value);
+  }
+
+  goToPreviousMonth(): void {
+    const currentMonth = this.selectedMonth();
+    const previousMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1);
+    this.selectedMonth.set(previousMonth);
+  }
+
+  goToNextMonth(): void {
+    const currentMonth = this.selectedMonth();
+    const nextMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1);
+    this.selectedMonth.set(nextMonth);
+  }
+
+  goToCurrentMonth(): void {
+    this.selectedMonth.set(new Date());
+  }
+
   exportToCSV(): void {
     if (!this.canEdit()) return;
     
-    const date = this.selectedDate();
-    const dateStr = date.toISOString().split('T')[0];
-    const filename = `payment-audits-${dateStr}.csv`;
-    
     // Get data from the current tab
     if (this.selectedTab() === 0) {
-      // Daily report - we'll need to get data from the daily component
+      // Daily report
+      const date = this.selectedDate();
+      const dateStr = date.toISOString().split('T')[0];
+      const filename = `payment-audits-daily-${dateStr}.csv`;
       this.exportDailyDataToCSV(filename);
     } else {
-      // Monthly report - we'll need to get data from the monthly component
+      // Monthly report
+      const month = this.selectedMonth();
+      const monthStr = `${month.getFullYear()}-${(month.getMonth() + 1).toString().padStart(2, '0')}`;
+      const filename = `payment-audits-monthly-${monthStr}.csv`;
       this.exportMonthlyDataToCSV(filename);
     }
   }
